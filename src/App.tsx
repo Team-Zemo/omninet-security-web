@@ -4,8 +4,9 @@ import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
 import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import EmailRegistrationPage from './pages/EmailRegistrationPage';
 import DashboardPage from './pages/DashboardPage';
-import MergeConfirmationPage from './pages/MergeConfirmationPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import './App.css';
 
 function App() {
@@ -57,6 +58,21 @@ function App() {
             }
           />
 
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <EmailRegistrationPage />
+              </PublicRoute>
+            }
+          />
+
+          {/* OAuth Callback Route */}
+          <Route
+            path="/auth/callback"
+            element={<AuthCallbackPage />}
+          />
+
           {/* Protected Routes */}
           <Route
             path="/dashboard"
@@ -65,12 +81,6 @@ function App() {
                 <DashboardPage />
               </ProtectedRoute>
             }
-          />
-
-          {/* Merge Confirmation Route - Special case, needs auth check but not full protection */}
-          <Route
-            path="/merge-confirmation"
-            element={<MergeConfirmationPage />}
           />
 
           {/* Home Route - Redirect based on auth status */}
