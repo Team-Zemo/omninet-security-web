@@ -192,6 +192,46 @@ export const authAPI = {
     ),
 };
 
+// TODO
+// export const todoAPI = {
+//   // Get all todos
+//   getAllTodos: async () => {
+//     const response = await api.get('/api/v1/todo/');
+//     console.log('getAllTodos response:', response.data); // Debugging line to check response
+//     return response.data;
+//   },
+
+//   // Get todo by ID
+//   getTodoById: async (id) => {
+//     const response = await api.get(`/api/v1/todo/${id}`);
+//     return response.data;
+//   },
+
+//   // Create new todo
+//   createTodo: async (todoData) => {
+//     const response = await api.post('/api/v1/todo/', todoData);
+//     return response.data;
+//   },
+
+//   // Update todo
+//   updateTodo: async (id, todoData) => {
+//     const response = await api.put(`/api/v1/todo/${id}`, todoData);
+//     return response.data;
+//   },
+
+//   // Delete todo
+//   deleteTodo: async (id) => {
+//     const response = await api.delete(`/api/v1/todo/${id}`);
+//     return response.data;
+//   },
+
+//   // Toggle todo completion status
+//   toggleTodo: async (id) => {
+//     const response = await api.patch(`/api/v1/todo/${id}/toggle`);
+//     return response.data;
+//   }
+// };
+
 export const oauthUrls = {
   github: `${API_BASE_URL}/oauth2/authorization/github`,
   google: `${API_BASE_URL}/oauth2/authorization/google`,

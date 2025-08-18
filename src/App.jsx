@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect} from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import { useAuthStore } from './store/authStore';
 import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
-import LoginPage from './pages/LoginPage';
-import EmailRegistrationPage from './pages/EmailRegistrationPage';
-import DashboardPage from './pages/DashboardPage';
+import LoginPage from './pages/LoginPage/LoginPage';
+import EmailRegistrationPage from './pages/LoginPage/EmailRegistrationPage';
+import LandingPage from './pages/LandingPage/LandingPage';
+import Home from './pages/Home';
 import AuthCallbackPage from './pages/AuthCallbackPage';
-import './App.css';
 
 function App() {
   const { checkAuthStatus, isLoading } = useAuthStore();
-  const [count, setCount] = useState(0);
 
   useEffect(() => {
     checkAuthStatus();
@@ -19,12 +19,21 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'grey.50'
+        }}
+      >
+        <CircularProgress sx={{ color: 'primary.main' }} />
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+          Loading...
+        </Typography>
+      </Box>
     );
   }
 
@@ -51,6 +60,15 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route
+            path="/landing_page/*"
+            element={
+              <PublicRoute>
+                <LandingPage />
+              </PublicRoute>
+            }
+          />
+
+          <Route
             path="/login"
             element={
               <PublicRoute>
@@ -58,6 +76,7 @@ function App() {
               </PublicRoute>
             }
           />
+
 
           <Route
             path="/register"
@@ -76,10 +95,10 @@ function App() {
 
           {/* Protected Routes */}
           <Route
-            path="/dashboard"
+            path="/home/*"
             element={
               <ProtectedRoute>
-                <DashboardPage />
+                <Home />
               </ProtectedRoute>
             }
           />
@@ -87,28 +106,15 @@ function App() {
           {/* Home Route - Redirect based on auth status */}
           <Route
             path="/"
-            element={<Navigate to="/dashboard" replace />}
+            element={<Navigate to="/home" replace />}
           />
 
           {/* Catch all route - redirect to login */}
           <Route
             path="*"
-            element={<Navigate to="/login" replace />}
+            element={<Navigate to="/landing_page" replace />}
           />
         </Routes>
-
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg shadow-lg text-center">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">OmniNet</h1>
-            <p className="text-gray-600 mb-6">Welcome to your React + Tailwind CSS app!</p>
-            <button
-              onClick={() => setCount(count + 1)}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-300"
-            >
-              Count: {count}
-            </button>
-          </div>
-        </div>
       </div>
     </Router>
   );

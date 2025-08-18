@@ -1,0 +1,42 @@
+### Login via email
+POST http://localhost:8080/api/auth/login/email HTTP/1.1
+Content-Type: application/json
+
+{
+    "email": "apkfile96@gmail.com",
+    "password": "apkfile96"
+}
+
+### Category Create
+POST http://localhost:8080/api/v1/category/save
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJuYW1lIjoiYXBrIGZpbGUiLCJ0b2tlblR5cGUiOiJhY2Nlc3MiLCJ1c2VySWQiOiIxMDQwMDA2NDk1Nzk1MTA2ODkzNjciLCJlbWFpbCI6ImFwa2ZpbGU5NkBnbWFpbC5jb20iLCJzdWIiOiIxMDQwMDA2NDk1Nzk1MTA2ODkzNjciLCJpc3MiOiJvbW5pbmV0LXNlY3VyaXR5IiwiaWF0IjoxNzU1NTA2OTY2LCJleHAiOjE3NTU1MTA1NjZ9.JFB4HZnenBzDKtJBij-tAD7whJqPj10mronmUhttfXnPWLAX1nTf_MHr7lWIG-aqm0zJK2m-mCuI8iCiH4OW1w
+Content-Type: application/json
+
+{
+    "name" : "Programming",
+    "description" : "very good category",
+    "isActive": true
+}
+
+### Notes API
+
+POST http://localhost:8080/api/v1/notes/
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJuYW1lIjoiYXBrIGZpbGUiLCJ0b2tlblR5cGUiOiJhY2Nlc3MiLCJ1c2VySWQiOiIxMDQwMDA2NDk1Nzk1MTA2ODkzNjciLCJlbWFpbCI6ImFwa2ZpbGU5NkBnbWFpbC5jb20iLCJzdWIiOiIxMDQwMDA2NDk1Nzk1MTA2ODkzNjciLCJpc3MiOiJvbW5pbmV0LXNlY3VyaXR5IiwiaWF0IjoxNzU1NTA2OTY2LCJleHAiOjE3NTU1MTA1NjZ9.JFB4HZnenBzDKtJBij-tAD7whJqPj10mronmUhttfXnPWLAX1nTf_MHr7lWIG-aqm0zJK2m-mCuI8iCiH4OW1w
+Content-Type: multipart/form-data:
+--boundary
+Content-Disposition: form-data; name="notes"
+
+{
+  "title": "My First Note",
+  "description": "This is a demo note without file",
+  "category": {
+    "id": 1,
+    "name": "Programming"
+  }
+}
+--boundary--
+
+### Get Category
+
+GET http://localhost:8080/api/v1/category/category
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJuYW1lIjoiYXBrIGZpbGUiLCJ0b2tlblR5cGUiOiJhY2Nlc3MiLCJ1c2VySWQiOiIxMDQwMDA2NDk1Nzk1MTA2ODkzNjciLCJlbWFpbCI6ImFwa2ZpbGU5NkBnbWFpbC5jb20iLCJzdWIiOiIxMDQwMDA2NDk1Nzk1MTA2ODkzNjciLCJpc3MiOiJvbW5pbmV0LXNlY3VyaXR5IiwiaWF0IjoxNzU1NTA2OTY2LCJleHAiOjE3NTU1MTA1NjZ9.JFB4HZnenBzDKtJBij-tAD7whJqPj10mronmUhttfXnPWLAX1nTf_MHr7lWIG-aqm0zJK2m-mCuI8iCiH4OW1w

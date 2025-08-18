@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 
@@ -18,7 +19,7 @@ const AuthCallbackPage = () => {
         if (accessToken && refreshToken) {
           // Handle successful OAuth callback
           await handleOAuthCallback(searchParams);
-          navigate('/dashboard', { replace: true });
+          navigate('/home', { replace: true });
         } else {
           // Check for error parameters
           const error = searchParams.get('error');
@@ -48,12 +49,22 @@ const AuthCallbackPage = () => {
   }, [searchParams, handleOAuthCallback, setError, navigate]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Processing authentication...</p>
-      </div>
-    </div>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'grey.50',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <Box sx={{ textAlign: 'center' }}>
+        <CircularProgress sx={{ color: 'primary.main' }} />
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+          Processing authentication...
+        </Typography>
+      </Box>
+    </Box>
   );
 };
 

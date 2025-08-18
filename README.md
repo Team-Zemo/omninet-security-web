@@ -1,12 +1,11 @@
 # OmniNet
 
-A modern React application built with Vite and styled with Tailwind CSS.
+A modern React application built with Vite.
 
 ## Features
 
 - ⚡ Vite for fast development and building
 - ⚛️ React 19 with modern hooks
-- 🎨 Tailwind CSS for utility-first styling
 - 🧭 React Router for navigation
 - 📦 Zustand for state management
 - 🔥 React Hot Toast for notifications
@@ -40,5 +39,5 @@ src/
 ├── utils/         # Utility functions
 ├── App.jsx        # Main app component
 ├── main.jsx       # Entry point
-└── index.css      # Global styles with Tailwind
+└── index.css      # Global styles
 ```
