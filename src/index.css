@@ -1,12 +1,63 @@
-
-:root {
-  font-family: system-ui;
-  line-height: 1.5;
-  font-weight: 400;
-}
-
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 body {
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+}
+
+@theme {
+  --color-sky-blue-50: #f0f9ff;
+  --color-sky-blue-100: #e0f2fe;
+  --color-sky-blue-200: #bae6fd;
+  --color-sky-blue-300: #7dd3fc;
+  --color-sky-blue-400: #38bdf8;
+  --color-sky-blue-500: #0ea5e9;
+  --color-sky-blue-600: #0284c7;
+  --color-sky-blue-700: #0369a1;
+  --color-sky-blue-800: #075985;
+  --color-sky-blue-900: #0c4a6e;
+
+  --color-blue-green-50: #ecfeff;
+  --color-blue-green-100: #cffafe;
+  --color-blue-green-200: #a5f3fc;
+  --color-blue-green-300: #67e8f9;
+  --color-blue-green-400: #22d3ee;
+  --color-blue-green-500: #06b6d4;
+  --color-blue-green-600: #0891b2;
+  --color-blue-green-700: #0e7490;
+  --color-blue-green-800: #155e75;
+  --color-blue-green-900: #164e63;
+
+  --color-prussian-blue-50: #f0f9ff;
+  --color-prussian-blue-100: #e0f2fe;
+  --color-prussian-blue-200: #bae6fd;
+  --color-prussian-blue-300: #7dd3fc;
+  --color-prussian-blue-400: #38bdf8;
+  --color-prussian-blue-500: #0ea5e9;
+  --color-prussian-blue-600: #0284c7;
+  --color-prussian-blue-700: #0369a1;
+  --color-prussian-blue-800: #075985;
+  --color-prussian-blue-900: #0c4a6e;
+
+  --color-selective-yellow-50: #fffbeb;
+  --color-selective-yellow-100: #fef3c7;
+  --color-selective-yellow-200: #fde68a;
+  --color-selective-yellow-300: #fcd34d;
+  --color-selective-yellow-400: #fbbf24;
+  --color-selective-yellow-500: #f59e0b;
+  --color-selective-yellow-600: #d97706;
+  --color-selective-yellow-700: #b45309;
+  --color-selective-yellow-800: #92400e;
+  --color-selective-yellow-900: #78350f;
+
+  --color-ut-orange-50: #fff7ed;
+  --color-ut-orange-100: #ffedd5;
+  --color-ut-orange-200: #fed7aa;
+  --color-ut-orange-300: #fdba74;
+  --color-ut-orange-400: #fb923c;
+  --color-ut-orange-500: #f97316;
+  --color-ut-orange-600: #ea580c;
+  --color-ut-orange-700: #c2410c;
+  --color-ut-orange-800: #9a3412;
+  --color-ut-orange-900: #7c2d12;
 }

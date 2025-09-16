@@ -24,14 +24,20 @@ import {
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   ExitToApp as LogoutAllIcon,
-  Security as SecurityIcon
+  Security as SecurityIcon,
+  Category as CategoryIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon
 } from '@mui/icons-material';
 import { theme } from '../theme.js';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
   const [anchorElNav, setAnchorElNav] = useState(null);
   const [anchorElUser, setAnchorElUser] = useState(null);
+  const { isDarkMode, toggleDarkMode } = useTheme();
 
+  
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
   };
@@ -54,6 +60,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
     { name: 'Todo', path: '/home/todo', icon: <TodoIcon /> },
     { name: 'Notes', path: '/home/notes', icon: <NotesIcon /> },
     { name: 'Profile', path: '/home/profile', icon: <ProfileIcon /> },
+    { name: 'Category', path: '/home/category', icon: <CategoryIcon /> }
   ];
   return (
     <AppBar 
@@ -157,6 +164,8 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
             >
               {pages.map((page) => (
                 <MenuItem 
+                component={Link} 
+                to={page.path} 
                   key={page.name} 
                   onClick={handleCloseNavMenu}
                   sx={{
@@ -174,9 +183,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
                     {page.icon}
                   </Box>
                   <Typography 
-                    textAlign="center" 
-                    component={Link} 
-                    to={page.path} 
+                    textAlign="center"
                     sx={{ 
                       textDecoration: 'none', 
                       color: theme.colors.fontBody,
@@ -270,7 +277,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
                 }
               }}
             >
-              {user?.avatarUrl ? (
+              {user.avatarUrl ? (
                 <Avatar 
                   alt={user.name} 
                   src={user.avatarUrl}
@@ -282,20 +289,16 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
                   }}
                 />
               ) : (
-                <Avatar
+                <Avatar 
+                  alt={user.name} 
+                  src={user.avatarUrl}
                   sx={{
                     width: 44,
                     height: 44,
-                    background: `linear-gradient(45deg, ${theme.colors.primaryLight} 30%, ${theme.colors.primary} 90%)`,
                     border: '2px solid rgba(255, 255, 255, 0.3)',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                    fontWeight: 600,
-                    fontSize: 18,
-                    fontFamily: theme.font.family,
                   }}
-                >
-                  {user?.name?.charAt(0).toUpperCase()}
-                </Avatar>
+                />
               )}
             </IconButton>
             <Menu
@@ -384,6 +387,32 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
               >
                 <LogoutAllIcon sx={{ mr: 2, color: '#f44336' }} />
                 <Typography textAlign="center" fontWeight={500} color={theme.colors.fontBody} fontFamily={theme.font.family}>Logout All Devices</Typography>
+              </MenuItem>
+              
+              <MenuItem 
+                onClick={() => { 
+                  toggleDarkMode(); 
+                  handleCloseUserMenu(); 
+                }}
+                sx={{
+                  borderRadius: 2,
+                  mx: 1,
+                  my: 0.5,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    background: `linear-gradient(45deg, ${theme.colors.primaryLight}20 30%, ${theme.colors.primary}20 90%)`,
+                    transform: 'translateX(5px)',
+                  }
+                }}
+              >
+                {isDarkMode ? (
+                  <LightModeIcon sx={{ mr: 2, color: '#FFA726' }} />
+                ) : (
+                  <DarkModeIcon sx={{ mr: 2, color: theme.colors.primaryLight }} />
+                )}
+                <Typography textAlign="center" fontWeight={500} color={theme.colors.fontBody} fontFamily={theme.font.family}>
+                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </Typography>
               </MenuItem>
             </Menu>
           </Box>

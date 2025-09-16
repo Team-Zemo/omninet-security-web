@@ -11,11 +11,11 @@ export const useAuthStore = create((set, get) => ({
   checkAuthStatus: async () => {
     try {
       set({ isLoading: true, error: null });
-      console.log('Checking auth status...');
+      // console.log('Checking auth status...');
 
       // Check if we have valid tokens
       if (!tokenManager.isAuthenticated()) {
-        console.log('No valid tokens found');
+        // console.log('No valid tokens found');
         set({
           user: null,
           isAuthenticated: false,
@@ -27,7 +27,7 @@ export const useAuthStore = create((set, get) => ({
 
       // Get user data from backend
       const response = await authAPI.getCurrentUser();
-      console.log('Auth response:', response);
+      // console.log('Auth response:', response);
 
       if (response.success && response.data) {
         set({
@@ -35,9 +35,9 @@ export const useAuthStore = create((set, get) => ({
           isAuthenticated: true,
           isLoading: false
         });
-        console.log('User authenticated:', response.data);
+        // console.log('User authenticated:', response.data);
       } else {
-        console.log('Failed to get user data');
+        // console.log('Failed to get user data');
         tokenManager.clearTokens();
         set({
           user: null,
@@ -49,7 +49,7 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const errorStatus = error?.response?.status;
-      console.log('Auth check failed:', errorStatus, errorMessage);
+      // console.log('Auth check failed:', errorStatus, errorMessage);
 
       // Clear tokens on auth failure
       tokenManager.clearTokens();
@@ -73,10 +73,10 @@ export const useAuthStore = create((set, get) => ({
   loginWithEmail: async (data) => {
     try {
       set({ isLoading: true, error: null });
-      console.log('Logging in with email...');
+      // console.log('Logging in with email...');
 
       const response = await authAPI.loginWithEmail(data);
-      console.log('Email login response:', response);
+      // console.log('Email login response:', response);
 
       if (response.success && response.data) {
         // Store JWT tokens
@@ -93,7 +93,7 @@ export const useAuthStore = create((set, get) => ({
           isAuthenticated: true,
           isLoading: false
         });
-        console.log('User authenticated:', response.data.user);
+        // console.log('User authenticated:', response.data.user);
 
       } else {
         throw new Error(response.error || 'Login failed');
@@ -112,7 +112,7 @@ export const useAuthStore = create((set, get) => ({
   handleOAuthCallback: async (urlParams) => {
     try {
       set({ isLoading: true, error: null });
-      console.log('Handling OAuth callback...');
+      // console.log('Handling OAuth callback...');
 
       const accessToken = urlParams.get('access_token');
       const refreshToken = urlParams.get('refresh_token');
@@ -137,7 +137,7 @@ export const useAuthStore = create((set, get) => ({
       // Clear URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
 
-      console.log('OAuth login successful');
+      // console.log('OAuth login successful');
     } catch (error) {
       console.error('OAuth callback error:', error);
       set({
@@ -150,12 +150,12 @@ export const useAuthStore = create((set, get) => ({
 
   logout: async () => {
     try {
-      console.log('Logging out...');
+      // console.log('Logging out...');
       set({ isLoading: true });
 
       // Call logout API to revoke refresh token
       await authAPI.logout();
-      console.log('Logout API call successful');
+      // console.log('Logout API call successful');
     } catch (error) {
       console.error('Logout API error:', error);
       // Continue with local logout even if API call fails
@@ -176,11 +176,11 @@ export const useAuthStore = create((set, get) => ({
 
   logoutAll: async () => {
     try {
-      console.log('Logging out from all devices...');
+      // console.log('Logging out from all devices...');
       set({ isLoading: true });
 
       await authAPI.logoutAll();
-      console.log('Logout all successful');
+      // console.log('Logout all successful');
     } catch (error) {
       console.error('Logout all error:', error);
     } finally {

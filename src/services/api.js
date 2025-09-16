@@ -192,45 +192,74 @@ export const authAPI = {
     ),
 };
 
-// TODO
-// export const todoAPI = {
-//   // Get all todos
-//   getAllTodos: async () => {
-//     const response = await api.get('/api/v1/todo/');
-//     console.log('getAllTodos response:', response.data); // Debugging line to check response
-//     return response.data;
-//   },
+// Category API
 
-//   // Get todo by ID
-//   getTodoById: async (id) => {
-//     const response = await api.get(`/api/v1/todo/${id}`);
-//     return response.data;
-//   },
+export const categoryAPI = {
+  // Create a new category
+  createCategory: async (data) => {
+    const response = await api.post('/api/v1/category/save', data);
+    return response.data;
+  },
 
-//   // Create new todo
-//   createTodo: async (todoData) => {
-//     const response = await api.post('/api/v1/todo/', todoData);
-//     return response.data;
-//   },
+  // Get all categories for the user
+  getCategory: async () => {
+    const response = await api.get('/api/v1/category/active-category');
+    return response.data;
+  },
 
-//   // Update todo
-//   updateTodo: async (id, todoData) => {
-//     const response = await api.put(`/api/v1/todo/${id}`, todoData);
-//     return response.data;
-//   },
+  // Get a specific category by ID
+  getCategoryById: async (id) => {
+    const response = await api.get(`/api/v1/category/${id}`);
+    return response.data;
+  },
 
-//   // Delete todo
-//   deleteTodo: async (id) => {
-//     const response = await api.delete(`/api/v1/todo/${id}`);
-//     return response.data;
-//   },
+  // Delete a category by ID
+  deleteCategory: async (id) => {
+    const response = await api.delete(`/api/v1/category/${id}`);
+    return response.data;
+  },
+};
 
-//   // Toggle todo completion status
-//   toggleTodo: async (id) => {
-//     const response = await api.patch(`/api/v1/todo/${id}/toggle`);
-//     return response.data;
-//   }
-// };
+// Notes api
+
+export const notesAPI = {
+  getNotes: async (pageNo = 0, pageSize = 10) => {
+    const response = await api.get(`/api/v1/notes/user-notes?pageNo=${pageNo}&pageSize=${pageSize}`);
+    return response.data;
+  },
+
+  getRecycledNotes: async (pageNo = 0, pageSize = 10) => {
+    const response = await api.get(`/api/v1/notes/recycle-bin`);
+    return response.data;
+  },
+
+  createNote: async (data) => {
+    const formData = new FormData();
+    const notesData = {
+      title: data.title,
+      description: data.description,
+      category: {
+        id: data.category.id,
+        name: data.category.name
+      }
+    };
+    
+    formData.append('notes', JSON.stringify(notesData));
+    
+    if (data.file) {
+      formData.append('file', data.file);
+    }
+
+    const response = await api.post('/api/v1/notes/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+
+    return response.data;
+  },
+};
 
 export const oauthUrls = {
   github: `${API_BASE_URL}/oauth2/authorization/github`,
