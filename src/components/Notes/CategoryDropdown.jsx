@@ -46,6 +46,10 @@ function CategoryDropdown({
                         <p className="text-center py-10 text-gray-500">
                             Loading categories...
                         </p>
+                    ) : !categories ? (
+                        <div className="text-center py-10 text-gray-500">
+                            No categories found
+                        </div>
                     ) : (
                         categories.map((category) => (
                             <li key={category.id} >
@@ -59,6 +63,8 @@ function CategoryDropdown({
                             </li>
                         ))
                     )}
+
+                    {!categories ? null : (
                     <li>
                         <button 
                             type="button" 
@@ -68,6 +74,8 @@ function CategoryDropdown({
                             All categories
                         </button>
                     </li>
+
+                    )}
                 </ul>
             </div>
         </div>

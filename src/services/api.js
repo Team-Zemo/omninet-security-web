@@ -319,4 +319,5 @@ export const oauthUrls = {
   google: `${API_BASE_URL}/oauth2/authorization/google`,
 };
 
+
 export default api;

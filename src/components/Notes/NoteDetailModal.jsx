@@ -4,7 +4,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import DownloadIcon from '@mui/icons-material/Download';
-import ToolTip from './Tooltip';
+import ToolTip from './ToolTip';
 import CloseIcon from '@mui/icons-material/Close';
 
 function NoteDetailModal({ 

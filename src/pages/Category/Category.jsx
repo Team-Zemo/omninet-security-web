@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { categoryAPI } from '../../services/api.js';
+import { categoryAPI, notesAPI } from '../../services/api.js';
 import { theme } from '../../theme.js';
 import DeleteIcon from '@mui/icons-material/Delete';
 import toast, { Toaster } from 'react-hot-toast';
@@ -67,10 +67,25 @@ function Category() {
 
   const handleDelete = async (id) => {
     try {
+      // First fetch all notes to find ones belonging to this category
+      const notesResponse = await notesAPI.getNotes(0, 1000); // Fetch a large number to get all notes
+      
+      if (notesResponse.status === 'success') {
+        const allNotes = notesResponse.data.notes;
+        const notesToDelete = allNotes.filter(note => note.category.id === id);
+        
+        // Delete each note that belongs to this category
+        for (const note of notesToDelete) {
+          await notesAPI.deleteNote(note.id);
+        }
+      }
+      
+      // Delete the category
       await categoryAPI.deleteCategory(id);
+
       await fetchCategories();
       setDeleteConfirm(null);
-      toast.success('Category deleted successfully!');
+      toast.success('Category and associated notes deleted successfully!');
     } catch (error) {
       console.error('Error deleting category:', error);
       toast.error('Failed to delete category. Please try again.');
@@ -226,7 +241,7 @@ function Category() {
               Delete Category
             </h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete "<strong>{deleteConfirm.name}</strong>"? This action cannot be undone.
+              Are you sure you want to delete "<strong>{deleteConfirm.name}</strong>"? This action cannot be undone. All notes associated with this category will also be deleted.
             </p>
             <div className="flex gap-3 justify-end">
               <button
