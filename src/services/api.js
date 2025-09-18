@@ -218,6 +218,10 @@ export const categoryAPI = {
     const response = await api.delete(`/api/v1/category/${id}`);
     return response.data;
   },
+  editCategory: async (data) => {
+    const response = await api.post('/api/v1/category/save', data);
+    return response.data;
+  }
 };
 
 // Notes api
@@ -316,6 +320,30 @@ export const notesAPI = {
       },
     });
 
+    return response.data;
+  },
+};
+
+// Todo API
+
+export const todoAPI = {
+  getTodos: async () => {
+    const response = await api.get('/api/v1/todo/');
+    return response.data;
+  },
+
+  createTodo: async (data) => {
+    const response = await api.post('/api/v1/todo/', data);
+    return response.data;
+  },
+
+  updateTodo: async (data) => {
+    const response = await api.post(`/api/v1/todo/`, data);
+    return response.data;
+  },
+
+  deleteTodo: async (id) => {
+    const response = await api.delete(`/api/v1/todo/${id}`);
     return response.data;
   },
 };

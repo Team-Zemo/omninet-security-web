@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { categoryAPI, notesAPI } from '../../services/api.js';
 import { theme } from '../../theme.js';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import toast, { Toaster } from 'react-hot-toast';
 
 function Category() {
@@ -12,6 +13,13 @@ function Category() {
     description: '',
     isActive: true
   });
+  const [isEditing, setIsEditing] = useState({
+    id:null,
+    name:'',
+    description:'',
+    isActive: true
+  });
+  const [originalEditData, setOriginalEditData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
@@ -65,8 +73,86 @@ function Category() {
     }
   };
 
+  const handleEdit = async (e) => {
+    e.preventDefault();
+    if (!isEditing.name.trim() || !isEditing.description.trim()) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    // Check if any changes were made
+    const hasChanges = originalEditData && (
+      isEditing.name.trim() !== originalEditData.name ||
+      isEditing.description.trim() !== originalEditData.description ||
+      isEditing.isActive !== originalEditData.isActive
+    );
+
+    if (!hasChanges) {
+      toast.error('No changes detected. Please modify the category before saving.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await categoryAPI.editCategory({
+        id: isEditing.id,
+        name: isEditing.name.trim(),
+        description: isEditing.description.trim(),
+        isActive: isEditing.isActive
+      });
+
+      if (response.status === 'success') {
+        toast.success('Category updated successfully!');
+        setIsEditing({ id: null, name: '', description: '', isActive: true });
+        setOriginalEditData(null);
+        fetchCategories();
+      }
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast.error('Failed to update category');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const startEdit = (category) => {
+    setIsEditing({
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      isActive: category.isActive
+    });
+    
+    // Store original data for comparison
+    setOriginalEditData({
+      name: category.name,
+      description: category.description,
+      isActive: category.isActive
+    });
+  };
+
+  const cancelEdit = () => {
+    setIsEditing({ id: null, name: '', description: '', isActive: true });
+    setOriginalEditData(null);
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'description' && value.length > 100) {
+      return;
+    }
+    
+    setIsEditing(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleDelete = async (id) => {
     try {
+
+
       // First fetch all notes to find ones belonging to this category
       const notesResponse = await notesAPI.getNotes(0, 1000); // Fetch a large number to get all notes
       
@@ -206,27 +292,80 @@ function Category() {
                 key={category.id}
                 className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm transition-all duration-200 hover:shadow-lg hover:translate-x-1 hover:-translate-y-1 relative group"
               >
-                <div className="absolute top-3 right-3  transition-opacity duration-200">
-                  <button
-                    onClick={() => setDeleteConfirm(category)}
-                    className="bg-red-600 hover:bg-red-500 text-white p-1 rounded-lg text-xs font-semibold transition-all duration-300 ease-out hover:scale-110 cursor-pointer"
-                    title="Delete category"
-                  >
-                    <DeleteIcon  />
-                  </button>
-                </div>
+                {isEditing.id === category.id ? (
+                  // Edit mode
+                  <form onSubmit={handleEdit} className="space-y-3">
+                    <input
+                      type="text"
+                      name="name"
+                      value={isEditing.name}
+                      onChange={handleEditInputChange}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-green-500 outline-none"
+                      required
+                      maxLength="20"
+                    />
+                    <textarea
+                      name="description"
+                      value={isEditing.description}
+                      onChange={handleEditInputChange}
+                      rows="2"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-green-500 outline-none resize-none"
+                      required
+                      maxLength="100"
+                    />
+                    <div className="text-xs text-gray-400 text-right">
+                      {isEditing.description.length}/100 characters
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 font-semibold"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold"
+                      >
+                        {isSubmitting ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  // View mode
+                  <>
+                    <div className="absolute top-3 right-3 flex gap-1 transition-opacity duration-200">
+                      <button
+                        onClick={() => startEdit(category)}
+                        className="bg-blue-600 hover:bg-blue-500 text-white p-1 rounded-lg text-xs font-semibold transition-all duration-300 ease-out hover:scale-110 cursor-pointer"
+                        title="Edit category"
+                      >
+                        <EditIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(category)}
+                        className="bg-red-600 hover:bg-red-500 text-white p-1 mx-2 rounded-lg text-xs font-semibold transition-all duration-300 ease-out hover:scale-110 cursor-pointer"
+                        title="Delete category"
+                      >
+                        <DeleteIcon className="w-4 h-4" />
+                      </button>
+                    </div>
 
-                <h3 className="text-xl font-bold text-gray-800 mb-2 pr-12">
-                  {category.name}
-                </h3>
-                
-                <p className="text-sm text-gray-600 leading-relaxed mb-3">
-                  {category.description || 'No description'}
-                </p>
-                
-                <div className="text-xs text-gray-400 border-t border-gray-100 pt-3">
-                  Created: {formatDate(category.createdDate)}
-                </div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2 pr-16">
+                      {category.name}
+                    </h3>
+                    
+                    <p className="break-all text-sm text-gray-600 leading-relaxed mb-3">
+                      {category.description || 'No description'}
+                    </p>
+                    
+                    <div className="text-xs text-gray-400 border-t border-gray-100 pt-3">
+                      Created: {formatDate(category.createdDate)}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
