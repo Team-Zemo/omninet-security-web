@@ -121,3 +121,17 @@ function App() {
 }
 
 export default App;
+
+
+// import React from 'react'
+// import AiChat from './pages/AiChat/AiChat'
+
+// const App = () => {
+//   return (
+//     <div>
+//       <AiChat></AiChat>
+//     </div>
+//   )
+// }
+
+// export default App
