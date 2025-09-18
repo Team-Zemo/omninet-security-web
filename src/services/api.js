@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { tokenManager } from '../utils/tokenManager';
-
-const API_BASE_URL = 'http://localhost:8080';
-// const API_BASE_URL = 'http://2d63c1dad52b.ngrok-free.app/';
+import {base_serverurl} from "../store/constStrings.js";
+const API_BASE_URL = base_serverurl
 
 // Configure axios with base URL and content type
 const api = axios.create({
@@ -552,11 +551,6 @@ export const aiChatAPI = {
    });
    return response.data;
  },
-};
-
-export const oauthUrls = {
- github: `${API_BASE_URL}/oauth2/authorization/github`,
- google: `${API_BASE_URL}/oauth2/authorization/google`,
 };
 
 export default api;

@@ -3,6 +3,7 @@ import { chatAPI } from '../services/api';
 import { tokenManager } from '../utils/tokenManager';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
+import {base_serverurl} from './constStrings';
 
 export const useChatStore = create((set, get) => ({
   // Connection state
@@ -43,7 +44,7 @@ export const useChatStore = create((set, get) => ({
       }
       
       // const socket = new SockJS('http://server.steel.udaykhare.social/ws');
-      const socket = new SockJS('http://localhost:8080/ws');
+      const socket = new SockJS(base_serverurl+"/ws");
       const client = new Client({
         webSocketFactory: () => socket,
         debug: () => {}, // Disable debug logging
