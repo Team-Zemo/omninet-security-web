@@ -348,6 +348,100 @@ export const todoAPI = {
   },
 };
 
+// Storage API
+
+export const storageAPI = {
+  // Api to get a PreSignedUrl to upload a file.
+  getUploadUrl: async (fileName) => {
+    try {
+      const response = await api.post(`/api/storage/files/upload-url`, { fileName });
+      console.log('Raw upload URL API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Upload URL API error:', error);
+      // Handle error response format
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      throw error;
+    }
+  },
+
+  // Api to get a PreSignedUrl to download a file.
+  getDownloadUrl: async (fileName) => {
+    try {
+      const response = await api.post(`/api/storage/files/download-url`, { fileName });
+      console.log('Raw download URL API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Download URL API error:', error);
+      // Handle error response format
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      throw error;
+    }
+  },
+
+  //Api to create a folder. Should provide full path eg- "pop", "pop/opo"
+  createFolder: async (folderName) => {
+    const response = await api.post(`/api/storage/folders`, { folderName });
+    return response.data;
+  },
+
+  //Api to get all files and folders in a specific folder
+  getFilesAndFolders: async (folderName = '') => {
+    try {
+      // Handle empty folderName for root directory
+      const url = folderName 
+        ? `/api/storage/contents?folderName=${encodeURIComponent(folderName)}`
+        : '/api/storage/contents';
+      
+      const response = await api.get(url);
+      console.log('Storage API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Storage API error:', error);
+      // If the endpoint doesn't exist, return empty structure
+      if (error.response?.status === 404) {
+        console.warn('Storage contents endpoint not found, returning empty structure');
+        return { files: [], folders: [] };
+      }
+      throw error;
+    }
+  },
+
+  //Api to check if a file exists.
+  checkFileExists: async (fileName) => {
+    if (!fileName) {
+      return { exists: false };
+    }
+    const response = await api.get(`/api/storage/files/exists?fileName=${encodeURIComponent(fileName)}`);
+    return response.data;
+  },
+
+  //Api to check if a folder exists.
+  checkFolderExists: async (folderName) => {
+    if (folderName === '' || folderName === null || folderName === undefined) {
+      return { exists: true }; // Root folder always exists
+    }
+    const response = await api.get(`/api/storage/folders/exists?folderName=${encodeURIComponent(folderName)}`);
+    return response.data;
+  },
+
+  //Api to delete a file
+  deleteFile: async (fileName) => {
+    const response = await api.delete(`/api/storage/files`,);
+    return response.data;
+  },
+
+  //Api to delete a folder. Should provide full path eg- "pop", "pop/opo"
+  deleteFolder: async (folderName) => {
+    const response = await api.delete(`/api/storage/folders`, { data: { folderName } });
+    return response.data;
+  }
+};
+
 // Chat API
 
 export const chatAPI = {
@@ -378,6 +472,5 @@ export const oauthUrls = {
   github: `${API_BASE_URL}/oauth2/authorization/github`,
   google: `${API_BASE_URL}/oauth2/authorization/google`,
 };
-
 
 export default api;

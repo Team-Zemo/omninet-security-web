@@ -1,7 +1,12 @@
+import React from 'react';
+import FileExplorer from '../../components/FileExplorer/FileExplorer';
+
 function Storage() {
   return (
-    <div>
-      <h1>Storage Page</h1>
+    <div className="h-screen flex flex-col">
+      <div className="flex-1 overflow-hidden">
+        <FileExplorer />
+      </div>
     </div>
   );
 }

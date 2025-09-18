@@ -1,0 +1,665 @@
+import { storageAPI } from './api';
+
+/**
+ * Enhanced storage client with composed operations
+ * Provides higher-level abstractions over the base storage APIs
+ */
+export class StorageClient {
+  constructor() {
+    this.uploadProgress = new Map();
+  }
+
+  // ============ Direct API Wrappers ============
+
+  async getContents(folderPath = '') {
+    try {
+      const response = await storageAPI.getFilesAndFolders(folderPath);
+      
+      // Handle different response formats
+      let data = response;
+      if (response && response.data) {
+        data = response.data;
+      }
+      
+      // Ensure we have proper structure
+      const result = {
+        files: [],
+        folders: []
+      };
+
+      if (data) {
+        // If response is a URL (presigned URL), handle differently
+        if (typeof data === 'string' && data.includes('http')) {
+          console.log('Received presigned URL for folder access:', data);
+          // For now, return empty - this might need backend changes
+          return {
+            success: true,
+            data: result
+          };
+        }
+
+        // Handle array format
+        if (Array.isArray(data)) {
+          data.forEach(item => {
+            if (item.type === 'folder' || item.directory || !item.name.includes('.')) {
+              result.folders.push({
+                name: item.name,
+                type: 'folder',
+                path: item.path || item.name,
+                size: item.size || 0,
+                lastModified: item.lastModified || item.modifiedDate
+              });
+            } else {
+              result.files.push({
+                name: item.name,
+                type: 'file',
+                path: item.path || item.name,
+                size: item.size || 0,
+                lastModified: item.lastModified || item.modifiedDate,
+                mimeType: item.mimeType || item.contentType
+              });
+            }
+          });
+        }
+        
+        // Handle object format with files and folders properties
+        else if (data.files || data.folders) {
+          result.files = (data.files || []).map(file => ({
+            ...file,
+            type: 'file',
+            path: file.path || file.name
+          }));
+          result.folders = (data.folders || []).map(folder => ({
+            ...folder,
+            type: 'folder',
+            path: folder.path || folder.name
+          }));
+        }
+      }
+
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      console.error('Failed to load contents:', error);
+      // If it's a 404, return empty contents instead of failing
+      if (error.response?.status === 404) {
+        return {
+          success: true,
+          data: { files: [], folders: [] }
+        };
+      }
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to load contents'
+      };
+    }
+  }
+
+  async createFolder(folderPath) {
+    try {
+      const response = await storageAPI.createFolder(folderPath);
+      
+      // Handle both success formats
+      if (response.success || response.status === 'success') {
+        return {
+          success: true,
+          data: response.data,
+          message: response.message
+        };
+      } else {
+        // Handle failed response format
+        return {
+          success: false,
+          error: response.message || 'Failed to create folder',
+          validationErrors: response.data
+        };
+      }
+    } catch (error) {
+      // Handle API error response format
+      if (error.response?.data?.status === 'failed') {
+        return {
+          success: false,
+          error: error.response.data.message || 'Failed to create folder',
+          validationErrors: error.response.data.data
+        };
+      }
+      
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Failed to create folder'
+      };
+    }
+  }
+
+  async deleteFile(fileName) {
+    try {
+      const response = await storageAPI.deleteFile(fileName);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to delete file'
+      };
+    }
+  }
+
+  async deleteFolder(folderPath) {
+    try {
+      const response = await storageAPI.deleteFolder(folderPath);
+      return {
+        success: true,
+        data: response
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to delete folder'
+      };
+    }
+  }
+
+  async checkFileExists(fileName) {
+    try {
+      const response = await storageAPI.checkFileExists(fileName);
+      return {
+        success: true,
+        exists: response?.exists || false
+      };
+    } catch (error) {
+      // If file doesn't exist, API might return 404
+      if (error.response?.status === 404) {
+        return {
+          success: true,
+          exists: false
+        };
+      }
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to check file existence'
+      };
+    }
+  }
+
+  async checkFolderExists(folderPath) {
+    try {
+      const response = await storageAPI.checkFolderExists(folderPath);
+      return {
+        success: true,
+        exists: response?.exists || false
+      };
+    } catch (error) {
+      // If folder doesn't exist, API might return 404
+      if (error.response?.status === 404) {
+        return {
+          success: true,
+          exists: false
+        };
+      }
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to check folder existence'
+      };
+    }
+  }
+
+  // ============ Upload Operations ============
+
+  async uploadFile(file, targetPath, onProgress = null) {
+    try {
+      // Fix path construction to avoid double slashes
+      let fileName;
+      if (!targetPath || targetPath === '') {
+        fileName = file.name;
+      } else {
+        // Remove trailing slash from targetPath if it exists, then add single slash
+        const cleanTargetPath = targetPath.replace(/\/+$/, '');
+        fileName = `${cleanTargetPath}/${file.name}`;
+      }
+      
+      console.log('Requesting upload URL for fileName:', fileName);
+      
+      const urlResponse = await storageAPI.getUploadUrl(fileName);
+      console.log('Upload URL response:', urlResponse);
+      
+      // Handle the correct API response format
+      if (!urlResponse?.success) {
+        // Handle validation errors
+        if (urlResponse?.status === 'failed' && urlResponse?.data) {
+          const errorMessages = Object.values(urlResponse.data).flat();
+          throw new Error(errorMessages.join(', '));
+        }
+        throw new Error(urlResponse?.message || 'Failed to get upload URL');
+      }
+      
+      const uploadUrl = urlResponse.data?.url;
+      if (!uploadUrl) {
+        throw new Error('Upload URL not found in response');
+      }
+
+      console.log('Uploading file to URL:', uploadUrl);
+      await this.uploadToPresignedUrl(file, uploadUrl, onProgress);
+
+      return {
+        success: true,
+        data: {
+          fileName,
+          size: file.size,
+          type: file.type,
+          uploadUrl: uploadUrl,
+          expiresIn: urlResponse.data?.expiresIn
+        }
+      };
+    } catch (error) {
+      console.error('Upload file error:', error);
+      return {
+        success: false,
+        error: error.message || 'Upload failed'
+      };
+    }
+  }
+
+  async uploadToPresignedUrl(file, uploadUrl, onProgress = null) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable && onProgress) {
+          const percentComplete = (event.loaded / event.total) * 100;
+          onProgress(percentComplete);
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200 || xhr.status === 204) {
+          resolve({ success: true });
+        } else {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Upload failed'));
+      });
+
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.send(file);
+    });
+  }
+
+  // ============ Download Operations ============
+
+  async downloadFile(fileName) {
+    try {
+      console.log('Requesting download URL for fileName:', fileName);
+      
+      const response = await storageAPI.getDownloadUrl(fileName);
+      console.log('Download URL response:', response);
+      
+      // Handle the correct API response format
+      if (!response?.success) {
+        // Handle validation errors
+        if (response?.status === 'failed' && response?.data) {
+          const errorMessages = Object.values(response.data).flat();
+          throw new Error(errorMessages.join(', '));
+        }
+        throw new Error(response?.message || 'Failed to get download URL');
+      }
+      
+      const downloadUrl = response.data?.url;
+      if (!downloadUrl) {
+        throw new Error('Download URL not found in response');
+      }
+
+      console.log('Downloading file from URL:', downloadUrl);
+      
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName.split('/').pop();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      return {
+        success: true,
+        data: { 
+          fileName, 
+          downloadUrl: downloadUrl,
+          expiresIn: response.data?.expiresIn
+        }
+      };
+    } catch (error) {
+      console.error('Download error:', error);
+      return {
+        success: false,
+        error: error.message || 'Download failed'
+      };
+    }
+  }
+
+  // ============ Composed Operations ============
+
+  /**
+   * Rename file using copy + delete strategy
+   * This is a composed operation since there's no direct rename API
+   */
+  async renameFile(oldPath, newPath, onProgress = null) {
+    let tempFileCreated = false;
+    
+    try {
+      onProgress?.({ step: 'checking', progress: 0 });
+      
+      const sourceCheck = await this.checkFileExists(oldPath);
+      if (!sourceCheck.success || !sourceCheck.exists) {
+        throw new Error('Source file does not exist');
+      }
+
+      const targetCheck = await this.checkFileExists(newPath);
+      if (targetCheck.success && targetCheck.exists) {
+        throw new Error('Target file already exists');
+      }
+
+      onProgress?.({ step: 'downloading', progress: 25 });
+
+      const downloadResponse = await storageAPI.getDownloadUrl(oldPath);
+      // Handle the download URL response format (assuming similar to upload)
+      let downloadUrl;
+      if (downloadResponse?.success && downloadResponse.data?.url) {
+        downloadUrl = downloadResponse.data.url;
+      } else if (downloadResponse?.downloadUrl) {
+        // Fallback to old format
+        downloadUrl = downloadResponse.downloadUrl;
+      } else {
+        throw new Error('Failed to get download URL for source file');
+      }
+
+      const fileResponse = await fetch(downloadUrl);
+      if (!fileResponse.ok) {
+        throw new Error('Failed to download source file');
+      }
+      
+      const fileBlob = await fileResponse.blob();
+      const fileName = newPath.split('/').pop();
+      const file = new File([fileBlob], fileName, { type: fileBlob.type });
+
+      onProgress?.({ step: 'uploading', progress: 50 });
+
+      const targetDir = newPath.includes('/') ? newPath.substring(0, newPath.lastIndexOf('/')) : '';
+      const uploadResult = await this.uploadFile(file, targetDir, 
+        (progress) => onProgress?.({ step: 'uploading', progress: 50 + (progress * 0.4) })
+      );
+
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error);
+      }
+
+      tempFileCreated = true;
+      onProgress?.({ step: 'verifying', progress: 90 });
+
+      const verifyCheck = await this.checkFileExists(newPath);
+      if (!verifyCheck.success || !verifyCheck.exists) {
+        throw new Error('Failed to verify new file creation');
+      }
+
+      onProgress?.({ step: 'cleaning', progress: 95 });
+
+      const deleteResult = await this.deleteFile(oldPath);
+      if (!deleteResult.success) {
+        console.warn('Failed to delete original file:', deleteResult.error);
+      }
+
+      onProgress?.({ step: 'complete', progress: 100 });
+
+      return {
+        success: true,
+        data: { oldPath, newPath, method: 'copy-delete' }
+      };
+
+    } catch (error) {
+      if (tempFileCreated) {
+        try {
+          await this.deleteFile(newPath);
+        } catch (rollbackError) {
+          console.error('Failed to rollback temp file:', rollbackError);
+        }
+      }
+
+      return {
+        success: false,
+        error: error.message || 'Rename operation failed',
+        method: 'copy-delete'
+      };
+    }
+  }
+
+  /**
+   * Rename folder using recursive copy + delete strategy
+   */
+  async renameFolder(oldPath, newPath, onProgress = null) {
+    try {
+      onProgress?.({ step: 'checking', progress: 0 });
+
+      const sourceCheck = await this.checkFolderExists(oldPath);
+      if (!sourceCheck.success || !sourceCheck.exists) {
+        throw new Error('Source folder does not exist');
+      }
+
+      const targetCheck = await this.checkFolderExists(newPath);
+      if (targetCheck.success && targetCheck.exists) {
+        throw new Error('Target folder already exists');
+      }
+
+      onProgress?.({ step: 'analyzing', progress: 10 });
+
+      const contents = await this.getContents(oldPath);
+      if (!contents.success) {
+        throw new Error('Failed to read source folder contents');
+      }
+
+      // Create the new folder with the full path
+      const createResult = await this.createFolder(newPath);
+      if (!createResult.success) {
+        throw new Error('Failed to create target folder');
+      }
+
+      onProgress?.({ step: 'copying', progress: 20 });
+
+      const files = contents.data.files || [];
+      const totalItems = files.length;
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        // Fix path construction to avoid double slashes
+        const cleanOldPath = oldPath.replace(/\/+$/, '');
+        const cleanNewPath = newPath.replace(/\/+$/, '');
+        const sourceFilePath = `${cleanOldPath}/${file.name}`;
+        const targetFilePath = `${cleanNewPath}/${file.name}`;
+        
+        const renameResult = await this.renameFile(sourceFilePath, targetFilePath);
+        if (!renameResult.success) {
+          throw new Error(`Failed to copy file ${file.name}: ${renameResult.error}`);
+        }
+        
+        const progress = 20 + ((i + 1) / totalItems) * 60;
+        onProgress?.({ step: 'copying', progress, current: i + 1, total: totalItems });
+      }
+
+      onProgress?.({ step: 'cleaning', progress: 90 });
+
+      const deleteResult = await this.deleteFolder(oldPath);
+      if (!deleteResult.success) {
+        console.warn('Failed to delete original folder:', deleteResult.error);
+      }
+
+      onProgress?.({ step: 'complete', progress: 100 });
+
+      return {
+        success: true,
+        data: { oldPath, newPath, method: 'recursive-copy-delete', itemsProcessed: totalItems }
+      };
+
+    } catch (error) {
+      try {
+        await this.deleteFolder(newPath);
+      } catch (cleanupError) {
+        console.error('Failed to cleanup partial folder copy:', cleanupError);
+      }
+
+      return {
+        success: false,
+        error: error.message || 'Folder rename operation failed',
+        method: 'recursive-copy-delete'
+      };
+    }
+  }
+
+  /**
+   * Move item (file or folder) to a new location
+   */
+  async moveItem(sourcePath, targetPath, isFolder = false, onProgress = null) {
+    if (isFolder) {
+      return this.renameFolder(sourcePath, targetPath, onProgress);
+    } else {
+      return this.renameFile(sourcePath, targetPath, onProgress);
+    }
+  }
+
+  /**
+   * Batch delete multiple items
+   */
+  async batchDelete(items, onProgress = null) {
+    const results = [];
+    const totalItems = items.length;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      
+      onProgress?.({ 
+        current: i + 1, 
+        total: totalItems, 
+        progress: ((i + 1) / totalItems) * 100,
+        currentItem: item.name
+      });
+
+      let result;
+      if (item.type === 'folder') {
+        result = await this.deleteFolder(item.path);
+      } else {
+        result = await this.deleteFile(item.path);
+      }
+
+      results.push({
+        item,
+        success: result.success,
+        error: result.error
+      });
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failedItems = results.filter(r => !r.success);
+
+    return {
+      success: failedItems.length === 0,
+      data: {
+        total: totalItems,
+        successful: successCount,
+        failed: failedItems.length,
+        results,
+        failedItems
+      }
+    };
+  }
+
+  /**
+   * Create a unique folder name if name already exists
+   */
+  async createUniqueFolder(basePath, desiredName) {
+    let folderName = desiredName;
+    let counter = 1;
+    
+    while (true) {
+      // Construct the full path properly for the backend - avoid double slashes
+      let fullPath;
+      if (!basePath || basePath === '') {
+        fullPath = folderName;
+      } else {
+        // Remove trailing slash from basePath if it exists, then add single slash
+        const cleanBasePath = basePath.replace(/\/+$/, '');
+        fullPath = `${cleanBasePath}/${folderName}`;
+      }
+      
+      const check = await this.checkFolderExists(fullPath);
+      
+      if (!check.success || !check.exists) {
+        // Pass the full path to createFolder
+        const result = await this.createFolder(fullPath);
+        
+        // If creation failed due to validation errors, return the error
+        if (!result.success && result.validationErrors) {
+          return result;
+        }
+        
+        return result;
+      }
+      
+      folderName = `${desiredName} (${counter})`;
+      counter++;
+      
+      if (counter > 100) {
+        return {
+          success: false,
+          error: 'Unable to create unique folder name after 100 attempts'
+        };
+      }
+    }
+  }
+
+  /**
+   * Get folder tree structure for navigation
+   */
+  async getFolderTree(rootPath = '', maxDepth = 3, currentDepth = 0) {
+    if (currentDepth >= maxDepth) return [];
+
+    try {
+      const contents = await this.getContents(rootPath);
+      if (!contents.success) return [];
+
+      const folders = contents.data.folders || [];
+      const tree = [];
+
+      for (const folder of folders) {
+        // Fix path construction to avoid double slashes
+        let folderPath;
+        if (!rootPath || rootPath === '') {
+          folderPath = folder.name;
+        } else {
+          const cleanRootPath = rootPath.replace(/\/+$/, '');
+          folderPath = `${cleanRootPath}/${folder.name}`;
+        }
+        
+        const children = await this.getFolderTree(folderPath, maxDepth, currentDepth + 1);
+        
+        tree.push({
+          name: folder.name,
+          path: folderPath,
+          children,
+          hasChildren: children.length > 0
+        });
+      }
+
+      return tree;
+    } catch (error) {
+      console.error('Failed to build folder tree:', error);
+      return [];
+    }
+  }
+}
+
+// Export singleton instance
+export const storageClient = new StorageClient();
+export default storageClient;
