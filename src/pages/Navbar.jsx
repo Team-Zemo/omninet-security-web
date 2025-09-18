@@ -62,7 +62,8 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
     { name: 'Notes', path: '/home/notes', icon: <NotesIcon /> },
     { name: 'Profile', path: '/home/profile', icon: <ProfileIcon /> },
     { name: 'Category', path: '/home/category', icon: <CategoryIcon /> },
-    { name: 'Chat', path: '/home/chat', icon: <ChatIcon /> }
+    { name: 'Chat', path: '/home/chat', icon: <ChatIcon /> },
+    { name: 'AI Chat', path: '/home/ai-chat', icon: <ChatIcon /> }
   ];
   return (
     <AppBar 
@@ -78,7 +79,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
       <Container maxWidth="xl">
         <Toolbar disableGutters sx={{ py: 1 }}>
           {/* Logo on lg screens */}
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', mr: 3 }}>
+          <Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center', mr: 3 }}>
             <Avatar
               sx={{
                 width: 40,
@@ -117,7 +118,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
           </Box>
 
           {/* Menu on xs,sm screens */}
-          <Box sx={{display: { xs: 'flex', md: 'none' } }}>
+          <Box sx={{display: { xs: 'flex',  lg: 'none' } }}>
             <IconButton
               size="large"
               aria-label="account of current user"
@@ -201,7 +202,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
           </Box>
 
           {/* Mobile logo */}
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexGrow: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexGrow: 1, alignItems: 'center', justifyContent: 'center' }}>
             <Avatar
               sx={{
                 width: 32,
@@ -236,7 +237,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
           </Box>
 
           {/* Desktop menu */}
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, justifyContent: 'center', gap: 1 }}>
+          <Box sx={{ flexGrow: 1, display: { xs: 'none',  lg: 'flex' }, justifyContent: 'center', gap: 1 }}>
             {pages.map((page) => (
               <Button
                 key={page.name}
@@ -246,7 +247,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
                 startIcon={page.icon}
                 sx={{ 
                   mx: 1,
-                  px: 3,
+                  px: { xs: 0,sm: 0, md: 0, lg: 1, xl: 3 },
                   py: 1.2,
                   color: theme.colors.fontBody, 
                   borderRadius: 3,

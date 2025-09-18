@@ -234,9 +234,31 @@ export const notesAPI = {
   },
 
   deleteNote: async (id) => {
+    const response = await api.get(`/api/v1/notes/delete/${id}`);
+    return response.data;
+  },
+
+  deleteNotePermanently: async (id) => {
     const response = await api.delete(`/api/v1/notes/delete/${id}`);
     return response.data;
   },
+
+  emptyRecycleBin: async () => {
+    const response = await api.delete('/api/v1/notes/delete-recycle');
+    return response.data;
+  },
+
+  searchNotes: async(keyword, pageNo = 0, pageSize = 10) => {
+    const response = await api.get(`/api/v1/notes/search?keyword=${encodeURIComponent(keyword)}&pageNo=${pageNo}&pageSize=${pageSize}`);
+    return response.data;
+  },
+
+  // downloadNote: async (id) => {
+  //   const response = await api.get(`/api/v1/notes/download/${id}`, {
+  //     responseType: 'blob',
+  //   });
+  //   return response.data;
+  // }
 
   createNote: async (data) => {
     const formData = new FormData();

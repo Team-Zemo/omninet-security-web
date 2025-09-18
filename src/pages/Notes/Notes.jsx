@@ -97,8 +97,19 @@ function Notes() {
         }
     };
 
-    const handleDeletedNotes = () => {
-        // TODO: Show deleted notes
+    const handleDeleteRecycled = async () => {
+        try {
+            const response = await notesAPI.emptyRecycleBin();
+            handleRecycleBin();
+            if(response.status === 'success') {
+                toast.success('Recycle bin emptied successfully!', {
+                    duration: 3000,
+                    position: 'top-right',
+                });
+            }
+        } catch (error) {
+            console.error('Error emptying recycle bin:', error);
+        }
         console.log('Show deleted notes');
         setIsFabOpen(false);
     };
@@ -211,10 +222,47 @@ function Notes() {
         }
     };
 
-    const handleDeleteNote = (note) => {
-        // TODO: Implement delete functionality
-        console.log('Delete note:', note.id);
-        toast.info('Delete functionality will be implemented soon', {
+    const handleDeleteNote =  async (note) => {
+        try {
+            await notesAPI.deleteNote(note.id);
+            fetchAndFilterNotes(selectedCategory, pagination.pageNo, pagination.pageSize);
+            handleCloseNoteDetail();
+            toast.success('Note deleted successfully!', {
+                duration: 3000,
+                position: 'top-right',
+            });
+        } catch (error) {
+            console.error('Error deleting note:', error);
+            toast.error('Failed to delete note. Please try again.', {
+                duration: 4000,
+                position: 'top-right',
+            });
+        }
+    };
+
+    const handleDeleteForever = async (note) => {
+        try {
+            await notesAPI.deleteNotePermanently(note.id);
+            setCurrentView('recycled');
+            handleRecycleBin();
+            handleCloseNoteDetail();
+            toast.success('Note deleted successfully!', {
+                duration: 3000,
+                position: 'top-right',
+            });
+        } catch (error) {
+            console.error('Error deleting note:', error);
+            toast.error('Failed to delete note. Please try again.', {
+                duration: 4000,
+                position: 'top-right',
+            });
+        }
+    };
+
+    const handleDownloadNote = (note) => {
+        // TODO: Implement download functionality
+        console.log('Download note:', note.id);
+        toast.info('Download functionality will be implemented soon', {
             duration: 3000,
             position: 'top-right',
         });
@@ -228,34 +276,9 @@ function Notes() {
             position: 'top-right',
         });
     };
+    
 
-    const handleDeleteForever = async (note) => {
-        try {
-            setIsSubmitting(true);
-            const response = await notesAPI.deleteNote(note.id);
-
-            if (response.status === 'success') {
-                if (currentView === 'recycled') {
-                    handleRecycleBin();
-                } else {
-                    fetchAndFilterNotes(selectedCategory, pagination.pageNo, pagination.pageSize);
-                }
-                toast.success('Note deleted successfully!', {
-                    duration: 3000,
-                    position: 'top-right',
-                });
-                handleCloseNoteDetail();
-            }
-        } catch (error) {
-            console.error('Error deleting note:', error);
-            toast.error('Failed to delete note. Please try again.', {
-                duration: 4000,
-                position: 'top-right',
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -511,6 +534,7 @@ function Notes() {
                 onDelete={handleDeleteNote}
                 onCopy={handleCopyNote}
                 onDeletePermanently={handleDeleteForever}
+                onDownload={handleDownloadNote}
                 isSubmitting={isSubmitting}
                 currentView={currentView}
             />
@@ -520,7 +544,7 @@ function Notes() {
                 onToggle={toggleFab}
                 onAddNote={handleAddNote}
                 onRecycleBin={handleRecycleBin}
-                onDeletedNotes={handleDeletedNotes}
+                onDeleteRecycled={handleDeleteRecycled}
                 onShowAllNotes={handleShowAllNotes}
             />
         </div>

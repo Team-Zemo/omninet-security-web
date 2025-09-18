@@ -3,7 +3,7 @@ function FloatingActionButton({
     onToggle, 
     onAddNote, 
     onRecycleBin, 
-    onDeletedNotes, 
+    onDeleteRecycled, 
     onShowAllNotes 
 }) {
     return (
@@ -52,10 +52,10 @@ function FloatingActionButton({
                 {/* Deleted Notes */}
                 <div className="flex items-center space-x-3">
                     <span className="bg-stone-600 text-white text-sm px-3 py-1 rounded-lg shadow-lg whitespace-nowrap">
-                        Deleted Notes
+                        Empty Bin
                     </span>
                     <button
-                        onClick={onDeletedNotes}
+                        onClick={onDeleteRecycled}
                         className="w-12 h-12 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all duration-200 flex items-center justify-center"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

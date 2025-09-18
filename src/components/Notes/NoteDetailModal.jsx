@@ -16,6 +16,7 @@ function NoteDetailModal({
     onDelete,
     onCopy,
     onDeletePermanently,
+    onDownload,
     isSubmitting ,
     currentView
 }) {
@@ -180,16 +181,20 @@ function NoteDetailModal({
                                         </ToolTip>
 
                                         {/* Delete Button */}
-                                        <ToolTip title="Delete" event={() => onDelete(note)}>
-                                            <DeleteIcon />
-                                        </ToolTip>
+                                        {currentView == 'notes' && (
+                                            <>
+                                                <ToolTip title="Delete" event={() => onDelete(note)}>
+                                                    <DeleteIcon />
+                                                </ToolTip>
+                                            </>
+                                        )}
 
                                         {/* Download Button */}
                                         <ToolTip title="Download" event={() => onDownload(note)}>
                                             <DownloadIcon />
                                         </ToolTip>
 
-                                        {currentView === 'recycle-bin' && (
+                                        {currentView === 'recycled' && (
                                             <>
                                                 {/* Permanent Delete Button */}
                                                 <ToolTip title="Delete Permanently" event={() => onDeletePermanently(note)}>

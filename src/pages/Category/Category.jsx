@@ -180,7 +180,7 @@ function Category() {
           <div className="text-center py-10 text-gray-500">
             Loading categories...
           </div>
-        ) : categories.length === 0 ? (
+        ) : !categories ? (
           <div className="text-center py-10 text-gray-500">
             No categories found. Add your first category above!
           </div>
