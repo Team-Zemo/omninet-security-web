@@ -159,16 +159,22 @@ function AddNoteModal({
 
                                 {isCategoryDropdownOpen && (
                                     <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto transition-all duration-200">
-                                        {categories.map((category) => (
-                                            <button
-                                                key={category.id}
-                                                type="button"
-                                                onClick={() => handleCategorySelect(category)}
-                                                className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white"
-                                            >
-                                                {category.name}
-                                            </button>
-                                        ))}
+                                        {!categories ? (
+                                            <div className="text-center py-10 text-gray-500">
+                                                No categories found
+                                            </div>
+                                        ) : (
+                                            categories.map((category) => (
+                                                <button
+                                                    key={category.id}
+                                                    type="button"
+                                                    onClick={() => handleCategorySelect(category)}
+                                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white"
+                                                >
+                                                    {category.name}
+                                                </button>
+                                            ))
+                                        )}
                                     </div>
                                 )}
                             </div>
