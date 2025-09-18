@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { categoryAPI, notesAPI } from '../../services/api';
 import AddNoteModal from '../../components/Notes/AddNoteModal';
+import NoteDetailModal from '../../components/Notes/NoteDetailModal';
 import CategoryDropdown from '../../components/Notes/CategoryDropdown';
 import FloatingActionButton from '../../components/Notes/FloatingActionButton';
 import NotesGrid from '../../components/Notes/NotesGrid';
@@ -26,6 +27,8 @@ function Notes() {
     const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentView, setCurrentView] = useState('notes'); // 'notes', 'recycled', 'deleted'
+    const [selectedNote, setSelectedNote] = useState(null);
+    const [isNoteDetailModalOpen, setIsNoteDetailModalOpen] = useState(false);
     const pageSizeDropdownRef = useRef(null);
 
 
@@ -156,6 +159,104 @@ function Notes() {
         }
     };
 
+    const handleNoteClick = (note) => {
+        setSelectedNote(note);
+        setIsNoteDetailModalOpen(true);
+    };
+
+    const handleCloseNoteDetail = () => {
+        setIsNoteDetailModalOpen(false);
+        setSelectedNote(null);
+    };
+
+    const handleEditNote = async (noteData) => {
+        if (!noteData.title.trim() || !noteData.description.trim() || !noteData.category.id) {
+            toast.error('Please fill in all fields and select a category');
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            const response = await notesAPI.updateNote({
+                id: noteData.id,
+                title: noteData.title.trim(),
+                description: noteData.description.trim(),
+                category: {
+                    id: noteData.category.id,
+                    name: noteData.category.name
+                },
+                file: noteData.file
+            });
+
+            if (response.status === 'success') {
+                if (currentView === 'recycled') {
+                    handleRecycleBin();
+                } else {
+                    fetchAndFilterNotes(selectedCategory, pagination.pageNo, pagination.pageSize);
+                }
+                toast.success('Note updated successfully!', {
+                    duration: 3000,
+                    position: 'top-right',
+                });
+                handleCloseNoteDetail();
+            }
+        } catch (error) {
+            console.error('Error updating note:', error);
+            toast.error('Failed to update note. Please try again.', {
+                duration: 4000,
+                position: 'top-right',
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteNote = (note) => {
+        // TODO: Implement delete functionality
+        console.log('Delete note:', note.id);
+        toast.info('Delete functionality will be implemented soon', {
+            duration: 3000,
+            position: 'top-right',
+        });
+    };
+
+    const handleCopyNote = (note) => {
+        // TODO: Implement copy functionality
+        console.log('Copy note:', note.id);
+        toast.info('Copy functionality will be implemented soon', {
+            duration: 3000,
+            position: 'top-right',
+        });
+    };
+
+    const handleDeleteForever = async (note) => {
+        try {
+            setIsSubmitting(true);
+            const response = await notesAPI.deleteNote(note.id);
+
+            if (response.status === 'success') {
+                if (currentView === 'recycled') {
+                    handleRecycleBin();
+                } else {
+                    fetchAndFilterNotes(selectedCategory, pagination.pageNo, pagination.pageSize);
+                }
+                toast.success('Note deleted successfully!', {
+                    duration: 3000,
+                    position: 'top-right',
+                });
+                handleCloseNoteDetail();
+            }
+        } catch (error) {
+            console.error('Error deleting note:', error);
+            toast.error('Failed to delete note. Please try again.', {
+                duration: 4000,
+                position: 'top-right',
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     // Close dropdown when clicking outside
     useEffect(() => {
         fetchCategories();
@@ -277,13 +378,11 @@ function Notes() {
                 reverseOrder={false}
                 gutter={8}
                 toastOptions={{
-                    // Define default options
                     duration: 3000,
                     style: {
                         background: '#363636',
                         color: '#fff',
                     },
-                    // Default options for specific types
                     success: {
                         duration: 3000,
                         style: {
@@ -366,7 +465,7 @@ function Notes() {
                                 </svg>
                             </button>
 
-                            <div className={`absolute right-0 top-full mt-1 z-50 ${isPageSizeDropdownOpen ? 'block' : 'hidden'} bg-white divide-y divide-gray-100 rounded-lg shadow-lg w-24 dark:bg-gray-700`}>
+                            <div className={`absolute right-0 top-full mt-1 z-100 ${isPageSizeDropdownOpen ? 'block' : 'hidden'} bg-white divide-y divide-gray-100 rounded-lg shadow-lg w-24 dark:bg-gray-700`}>
                                 <ul className="py-2 text-sm text-gray-700 dark:text-gray-200">
                                     {[5, 10, 15, 20, 25, 50].map((size) => (
                                         <li key={size}>
@@ -390,6 +489,8 @@ function Notes() {
                     loading={notesLoading}
                     onPageChange={handlePageChange}
                     pagination={pagination}
+                    currentView={currentView}
+                    onNoteClick={handleNoteClick}
                 />
             </div>
 
@@ -399,6 +500,19 @@ function Notes() {
                 categories={categories}
                 onSubmit={handleSubmitNote}
                 isSubmitting={isSubmitting}
+            />
+
+            <NoteDetailModal
+                isOpen={isNoteDetailModalOpen}
+                onClose={handleCloseNoteDetail}
+                note={selectedNote}
+                categories={categories}
+                onEdit={handleEditNote}
+                onDelete={handleDeleteNote}
+                onCopy={handleCopyNote}
+                onDeletePermanently={handleDeleteForever}
+                isSubmitting={isSubmitting}
+                currentView={currentView}
             />
 
             <FloatingActionButton

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { categoryAPI } from '../../services/api.js';
 import { theme } from '../../theme.js';
 import DeleteIcon from '@mui/icons-material/Delete';
+import toast, { Toaster } from 'react-hot-toast';
 
 function Category() {
   const [categories, setCategories] = useState([]);
@@ -13,7 +14,6 @@ function Category() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -47,13 +47,6 @@ function Category() {
     }));
   };
 
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 3000);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.description.trim()) return;
@@ -63,10 +56,10 @@ function Category() {
       await categoryAPI.createCategory(formData);
       setFormData({ name: '', description: '', isActive: true });
       await fetchCategories(); // Refresh the list
-      showToast('Category added successfully!');
+      toast.success('Category added successfully!');
     } catch (error) {
       console.error('Error creating category:', error);
-      showToast('Failed to add category. Please try again.', 'error');
+      toast.error('Failed to add category. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -77,10 +70,10 @@ function Category() {
       await categoryAPI.deleteCategory(id);
       await fetchCategories();
       setDeleteConfirm(null);
-      showToast('Category deleted successfully!');
+      toast.success('Category deleted successfully!');
     } catch (error) {
       console.error('Error deleting category:', error);
-      showToast('Failed to delete category. Please try again.', 'error');
+      toast.error('Failed to delete category. Please try again.');
     }
   };
 
@@ -96,19 +89,40 @@ function Category() {
 
   return (
     <div className="p-6 min-h-screen bg-gray-50 dark:bg-stone-800">
-      {/* Toast Message */}
-      {toast.show && (
-        <div className="fixed top-4 right-4 z-50">
-          <div className={`px-6 py-4 rounded-lg shadow-lg text-white font-semibold ${
-            toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-          } animate-fade-in`}>
-            <div className="flex items-center gap-2">
-              <span>{toast.type === 'success' ? '✅' : '❌'}</span>
-              <span>{toast.message}</span>
-            </div>
-          </div>
-        </div>
-      )}
+      <Toaster 
+        position="top-right"
+        reverseOrder={false}
+        gutter={8}
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            style: {
+              background: '#10B981',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#10B981',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#EF4444',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#EF4444',
+            },
+          },
+        }}
+      />
 
       {/* Add Category Form */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
@@ -126,6 +140,7 @@ function Category() {
               onChange={handleInputChange}
               className={`w-full px-4 py-3 text-base border-3 border-gray-200 rounded-lg bg-white text-gray-800 outline-none transition-colors duration-200 focus:border-green-500 font-sans ${formData.name.length > 0 ? 'border-green-500' : 'border-gray-200'}`}
               required
+              maxLength="20"
             />
           </div>
           
@@ -148,7 +163,7 @@ function Category() {
           <button
             type="submit"
             // disabled={isSubmitting || !formData.name.trim() || !formData.description.trim()}
-            className="bg-green-700 hover:bg-green-600  text-white px-6 py-3 rounded-lg text-base font-semibold transition-all duration-200 font-sans"
+            className="bg-green-700 hover:bg-green-600 hover:scale-105 ease-in-out text-white px-6 py-3 rounded-lg text-base font-semibold transition-all duration-200 font-sans"
           >
             {isSubmitting ? 'Adding...' : 'Add Category'}
           </button>
@@ -230,23 +245,6 @@ function Category() {
           </div>
         </div>
       )}
-      
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

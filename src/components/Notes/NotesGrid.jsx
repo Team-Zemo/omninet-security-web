@@ -1,11 +1,11 @@
-function NotesGrid({ notes, loading, onPageChange, pagination }) {
+function NotesGrid({ notes, loading, onPageChange, pagination, currentView, onNoteClick }) {
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            // hour: '2-digit',
+            // minute: '2-digit'
         });
     };
 
@@ -30,7 +30,11 @@ function NotesGrid({ notes, loading, onPageChange, pagination }) {
         <>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {notes.map((note) => (
-                    <div key={note.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-2 border-green-600 dark:border-gray-700">
+                    <div 
+                        key={note.id} 
+                        className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-2 border-green-600 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:bg-green-100 transition delay-10 duration-300 ease-in-out hover:scale-103"
+                        onClick={() => onNoteClick(note)}
+                    >
                         <div className="flex justify-between items-start mb-3">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
                                 {note.title}
@@ -48,9 +52,6 @@ function NotesGrid({ notes, loading, onPageChange, pagination }) {
                             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                                 Created: {formatDate(note.createdDate)}
                             </p>
-                            {/* <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Updated: {formatDate(note.updatedDate)}
-                            </p> */}
                         </div>
                     </div>
                 ))}

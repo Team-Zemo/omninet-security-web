@@ -10,6 +10,7 @@ import Todo from '../pages/Todo/Todo';
 import Profile from '../pages/Profile/Profile';
 import Notes from '../pages/Notes/Notes';
 import Category from '../pages/Category/Category';
+import Chat from '../pages/Chat/Chat';
 import { Box, CircularProgress, Typography, Button, Alert } from '@mui/material';
 import { ThemeProvider } from '../contexts/ThemeContext';
 
@@ -94,6 +95,7 @@ const Home = () => {
           <Route path="/profile" element={<Profile user={user} />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/category" element={<Category />} />
+          <Route path="/chat" element={<Chat />} />
           <Route path="/*" element={<Navigate to="/home/dashboard" replace />} />
         </Routes>
         <Footer />

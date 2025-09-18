@@ -147,7 +147,7 @@ function AddNoteModal({
                                 <button
                                     type="button"
                                     onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                                    className={`w-full px-3 py-2 text-left border-2 rounded-lg focus:ring-3 focus:ring-green-600 focus:border-black dark:bg-gray-700 dark:border-gray-600 dark:text-white flex justify-between items-center ${newNote.category.name === 'Select Category' ? 'border-gray-300':'border-green-600'}`}
+                                    className={`w-full px-3 py-2 text-left border-2 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-black dark:bg-gray-700 dark:border-gray-600 dark:text-white flex justify-between items-center ${newNote.category.name === 'Select Category' ? 'border-gray-300':'border-green-600'}`}
                                 >
                                     <span className={newNote.category.id ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
                                         {newNote.category.name}

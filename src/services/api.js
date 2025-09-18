@@ -233,6 +233,11 @@ export const notesAPI = {
     return response.data;
   },
 
+  deleteNote: async (id) => {
+    const response = await api.delete(`/api/v1/notes/delete/${id}`);
+    return response.data;
+  },
+
   createNote: async (data) => {
     const formData = new FormData();
     const notesData = {
@@ -256,6 +261,32 @@ export const notesAPI = {
       },
     });
 
+    return response.data;
+  },
+
+  updateNote: async (data) => {
+    const formData = new FormData();
+    const notesData = {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      category: {
+        id: data.category.id,
+        name: data.category.name
+      }
+    };
+    
+    formData.append('notes', JSON.stringify(notesData));
+    
+    if (data.file) {
+      formData.append('file', data.file);
+    }
+
+    const response = await api.post('/api/v1/notes/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
     return response.data;
   },

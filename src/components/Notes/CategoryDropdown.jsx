@@ -40,19 +40,19 @@ function CategoryDropdown({
                     <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4" />
                 </svg>
             </button>
-            <div id="dropdown" className={`absolute top-full left-0 z-50 ${isOpen ? 'block' : 'hidden'} bg-white divide-y divide-gray-100 rounded-lg shadow-lg w-44 dark:bg-gray-700 mt-1`}>
-                <ul className="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdown-button">
+            <div id="dropdown" className={` w-fit min-w-35 absolute top-full left-0 z-50 ${isOpen ? 'block' : 'hidden'} bg-white divide-y divide-gray-100 rounded-lg shadow-lg dark:bg-gray-700 mt-1`}>
+                <ul className="py-2 text-sm w-full text-gray-700 dark:text-gray-200" aria-labelledby="dropdown-button">
                     {loading ? (
                         <p className="text-center py-10 text-gray-500">
                             Loading categories...
                         </p>
                     ) : (
                         categories.map((category) => (
-                            <li key={category.id}>
+                            <li key={category.id} >
                                 <button 
                                     type="button" 
                                     onClick={() => onCategorySelect(category.name)} 
-                                    className="inline-flex w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-left"
+                                    className="w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-left"
                                 >
                                     {category.name}
                                 </button>

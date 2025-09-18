@@ -27,7 +27,8 @@ import {
   Security as SecurityIcon,
   Category as CategoryIcon,
   DarkMode as DarkModeIcon,
-  LightMode as LightModeIcon
+  LightMode as LightModeIcon,
+  Chat as ChatIcon
 } from '@mui/icons-material';
 import { theme } from '../theme.js';
 import { useTheme } from '../contexts/ThemeContext';
@@ -60,7 +61,8 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
     { name: 'Todo', path: '/home/todo', icon: <TodoIcon /> },
     { name: 'Notes', path: '/home/notes', icon: <NotesIcon /> },
     { name: 'Profile', path: '/home/profile', icon: <ProfileIcon /> },
-    { name: 'Category', path: '/home/category', icon: <CategoryIcon /> }
+    { name: 'Category', path: '/home/category', icon: <CategoryIcon /> },
+    { name: 'Chat', path: '/home/chat', icon: <ChatIcon /> }
   ];
   return (
     <AppBar 
