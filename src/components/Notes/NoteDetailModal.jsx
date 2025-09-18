@@ -26,8 +26,8 @@ function NoteDetailModal({
         title: '',
         description: '',
         category: { id: null, name: 'Select Category' },
-        file: null
     });
+    const [file, setFile] = useState(null);
     const [filePreview, setFilePreview] = useState(null);
     const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
     const categoryDropdownRef = useRef(null);
@@ -42,8 +42,7 @@ function NoteDetailModal({
                 category: { 
                     id: note.category?.id || null, 
                     name: note.category?.name || 'Select Category' 
-                },
-                file: null
+                }
             });
             setFilePreview(null);
         }
@@ -74,10 +73,7 @@ function NoteDetailModal({
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setEditNote(prev => ({
-                ...prev,
-                file: file
-            }));
+            setFile(file);
             
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
@@ -101,10 +97,7 @@ function NoteDetailModal({
     };
 
     const handleRemoveFile = () => {
-        setEditNote(prev => ({
-            ...prev,
-            file: null
-        }));
+        setFile(null);
         setFilePreview(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
@@ -129,7 +122,7 @@ function NoteDetailModal({
 
     const handleEditSubmit = (e) => {
         e.preventDefault();
-        onEdit(editNote);
+        onEdit(editNote, file);
         setIsEditing(false);
     };
 
@@ -190,9 +183,13 @@ function NoteDetailModal({
                                         )}
 
                                         {/* Download Button */}
-                                        <ToolTip title="Download" event={() => onDownload(note)}>
-                                            <DownloadIcon />
-                                        </ToolTip>
+                                        {note.fileDetails !== null && (
+                                            <ToolTip title="Download" event={() => onDownload(note)}>
+                                                <DownloadIcon />
+                                            </ToolTip>
+                                            
+                                        )}
+
 
                                         {currentView === 'recycled' && (
                                             <>
@@ -301,6 +298,7 @@ function NoteDetailModal({
                                             onChange={handleFileChange}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-gray-600 dark:file:text-gray-300"
                                             accept="*/*"
+                                            required
                                         />
                                         
                                         {filePreview && (
@@ -388,6 +386,17 @@ function NoteDetailModal({
                                         {note.description}
                                     </p>
                                 </div>
+
+                                {note.fileDetails !== null && (
+                                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">File Detail</h4>
+                                    <p onClick={() => onDownload(note)} className="w-fit hover:text-blue-700 cursor-pointer underline text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                                        {note.fileDetails.displayFileName}
+                                    </p>
+                                </div>
+                                    
+                                )}
+
 
                                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                                     <div className="grid grid-cols-2 gap-4 text-sm">

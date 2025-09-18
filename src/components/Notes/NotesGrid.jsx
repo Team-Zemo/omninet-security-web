@@ -18,10 +18,12 @@ function NotesGrid({ notes, loading, onPageChange, pagination, currentView, onNo
         );
     }
 
+
+
     if (notes.length === 0) {
         return (
             <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">No notes found for the selected category</p>
+                <p className="text-gray-500 text-lg">No notes found create your first note</p>
             </div>
         );
     }

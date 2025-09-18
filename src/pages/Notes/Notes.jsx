@@ -29,6 +29,9 @@ function Notes() {
     const [currentView, setCurrentView] = useState('notes'); // 'notes', 'recycled', 'deleted'
     const [selectedNote, setSelectedNote] = useState(null);
     const [isNoteDetailModalOpen, setIsNoteDetailModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
     const pageSizeDropdownRef = useRef(null);
 
 
@@ -180,7 +183,7 @@ function Notes() {
         setSelectedNote(null);
     };
 
-    const handleEditNote = async (noteData) => {
+    const handleEditNote = async (noteData, fileData) => {
         if (!noteData.title.trim() || !noteData.description.trim() || !noteData.category.id) {
             toast.error('Please fill in all fields and select a category');
             return;
@@ -188,29 +191,44 @@ function Notes() {
 
         try {
             setIsSubmitting(true);
-            const response = await notesAPI.updateNote({
-                id: noteData.id,
-                title: noteData.title.trim(),
-                description: noteData.description.trim(),
-                category: {
-                    id: noteData.category.id,
-                    name: noteData.category.name
-                },
-                file: noteData.file
-            });
+            
+            if(fileData===null) {
+                console.log("File not data present");
+                await notesAPI.updateNote({
+                    id: noteData.id,
+                    title: noteData.title.trim(),
+                    description: noteData.description.trim(),
+                    category: {
+                        id: noteData.category.id,
+                        name: noteData.category.name
+                    }
 
-            if (response.status === 'success') {
-                if (currentView === 'recycled') {
-                    handleRecycleBin();
-                } else {
-                    fetchAndFilterNotes(selectedCategory, pagination.pageNo, pagination.pageSize);
-                }
-                toast.success('Note updated successfully!', {
-                    duration: 3000,
-                    position: 'top-right',
                 });
-                handleCloseNoteDetail();
+            } else {
+                console.log("File data present");
+
+                await notesAPI.updateNote({
+                    id: noteData.id,
+                    title: noteData.title.trim(),
+                    description: noteData.description.trim(),
+                    category: {
+                        id: noteData.category.id,
+                        name: noteData.category.name
+                    },
+                    file: fileData
+                });
             }
+
+            if (currentView === 'recycled') {
+                handleRecycleBin();
+            } else {
+                fetchAndFilterNotes(selectedCategory, pagination.pageNo, pagination.pageSize);
+            }
+            toast.success('Note updated successfully!', {
+                duration: 3000,
+                position: 'top-right',
+            });
+            handleCloseNoteDetail();
         } catch (error) {
             console.error('Error updating note:', error);
             toast.error('Failed to update note. Please try again.', {
@@ -259,26 +277,152 @@ function Notes() {
         }
     };
 
-    const handleDownloadNote = (note) => {
-        // TODO: Implement download functionality
-        console.log('Download note:', note.id);
-        toast.info('Download functionality will be implemented soon', {
-            duration: 3000,
-            position: 'top-right',
-        });
+    const handleDownloadNote = async (note) => {
+        try {
+            const response = await notesAPI.downloadNote(note.fileDetails.id);
+            
+            const contentType = response.headers?.['content-type'] || 'application/octet-stream';
+            
+            const blob = new Blob([response.data || response], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            
+            // Create download link
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // Use the display file name from note.fileDetails.displayFileName
+            if (note.fileDetails?.displayFileName) {
+                a.download = note.fileDetails.displayFileName;
+            } else {
+                // Fallback: Determine extension from content type
+                let fileExtension = '';
+                switch (contentType) {
+                    case 'application/pdf':
+                        fileExtension = '.pdf';
+                        break;
+                    case 'image/jpeg':
+                        fileExtension = '.jpg';
+                        break;
+                    case 'image/png':
+                        fileExtension = '.png';
+                        break;
+                    case 'text/plain':
+                        fileExtension = '.txt';
+                        break;
+                    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                        fileExtension = '.docx';
+                        break;
+                    case 'application/msword':
+                        fileExtension = '.doc';
+                        break;
+                    default:
+                        fileExtension = '.file';
+                }
+                a.download = `${note.title || 'note_' + note.id}${fileExtension}`;
+            }
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            toast.success('File downloaded successfully!', {
+                duration: 3000,
+                position: 'top-right',
+            });
+        } catch (error) {
+            console.error('Error downloading note:', error);
+            toast.error('Failed to download note. Please try again.', {
+                duration: 4000,
+                position: 'top-right',
+            });
+        }
     };
 
     const handleCopyNote = (note) => {
-        // TODO: Implement copy functionality
-        console.log('Copy note:', note.id);
-        toast.info('Copy functionality will be implemented soon', {
-            duration: 3000,
-            position: 'top-right',
-        });
+        try {
+            notesAPI.copyNote(note.id).then((response) => {
+                if (response.status === 'success') {
+                    // Refresh the current view after copying
+                    if (isSearching) {
+                        handleSearch({ preventDefault: () => {} });
+                    } else if (currentView === 'recycled') {
+                        handleRecycleBin();
+                    } else {
+                        fetchAndFilterNotes(selectedCategory, pagination.pageNo, pagination.pageSize);
+                    }
+                    
+                    toast.success('Note copied successfully!', {
+                        duration: 3000,
+                        position: 'top-right',
+                    });
+                }
+            });
+        } catch (error) {
+            console.error('Error copying note:', error);
+            toast.error('Failed to copy note. Please try again.', {
+                duration: 4000,
+                position: 'top-right',
+            });
+        }
     };
-    
 
-    
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (!searchQuery.trim()) {
+            handleClearSearch();
+            return;
+        }
+
+        try {
+            setNotesLoading(true);
+            setIsSearching(true);
+            setCurrentView('search');
+            
+            const response = await notesAPI.searchNotes(searchQuery.trim(), 0, pagination.pageSize);
+            
+            if (response.status === 'success') {
+                const searchNotes = response.data.notes || [];
+                
+                setSearchResults(searchNotes);
+                setNotes(searchNotes);
+                setPagination({
+                    pageNo: 0,
+                    pageSize: pagination.pageSize,
+                    totalNotesCount: searchNotes.length,
+                    totalPagesCount: Math.ceil(searchNotes.length / pagination.pageSize),
+                    first: true,
+                    last: searchNotes.length <= pagination.pageSize
+                });
+            }
+        } catch (error) {
+            console.error('Error searching notes:', error);
+            toast.error('Failed to search notes. Please try again.', {
+                duration: 4000,
+                position: 'top-right',
+            });
+        } finally {
+            setNotesLoading(false);
+        }
+    };
+
+    const handleClearSearch = () => {
+        setSearchQuery('');
+        setIsSearching(false);
+        setSearchResults([]);
+        setCurrentView('notes');
+        fetchAndFilterNotes(selectedCategory, 0, pagination.pageSize);
+    };
+
+    const handleSearchInputChange = (e) => {
+        const value = e.target.value;
+        setSearchQuery(value);
+        
+        // Clear search if input is empty
+        if (!value.trim() && isSearching) {
+            handleClearSearch();
+        }
+    };
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -354,7 +498,10 @@ function Notes() {
     };
 
     const handlePageChange = (newPageNo) => {
-        if (currentView === 'recycled') {
+        if (isSearching) {
+            // Handle search pagination
+            handleSearchPagination(newPageNo);
+        } else if (currentView === 'recycled') {
             // Handle pagination for recycled notes
             handleRecycleBinPagination(newPageNo);
         } else {
@@ -388,6 +535,34 @@ function Notes() {
             }
         } catch (error) {
             console.error('Error fetching recycled notes:', error);
+        } finally {
+            setNotesLoading(false);
+        }
+    };
+
+    const handleSearchPagination = async (pageNo) => {
+        if (!searchQuery.trim()) return;
+
+        try {
+            setNotesLoading(true);
+            const response = await notesAPI.searchNotes(searchQuery.trim(), pageNo, pagination.pageSize);
+            
+            if (response.status === 'success') {
+                const searchNotes = response.data.notes || [];
+                const totalCount = response.data.totalElements || searchResults.length;
+                
+                setNotes(searchNotes);
+                setPagination({
+                    pageNo: pageNo,
+                    pageSize: pagination.pageSize,
+                    totalNotesCount: totalCount,
+                    totalPagesCount: Math.ceil(totalCount / pagination.pageSize),
+                    first: pageNo === 0,
+                    last: pageNo >= Math.ceil(totalCount / pagination.pageSize) - 1 || totalCount === 0
+                });
+            }
+        } catch (error) {
+            console.error('Error searching notes:', error);
         } finally {
             setNotesLoading(false);
         }
@@ -431,35 +606,50 @@ function Notes() {
                 }}
             />
             
-            <form className="p-3  mx-auto">
+            <form className="p-3 mx-auto" onSubmit={handleSearch}>
                 <div className="flex flex-row justify-center">
-                <CategoryDropdown
-                    categories={categories}
-                    loading={loading}
-                    selectedCategory={selectedCategory}
-                    onCategorySelect={selectCategory}
-                    isOpen={isDropdownOpen}
-                    onToggle={() => {
-                        toggleDropdown();
-                        setCurrentView('notes');
-                    }}
-                />
-                <div className="relative w-100">
-                    <input 
-                    type="search" 
-                    id="search-dropdown" 
-                    className="block py-2.5 pl-4 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700  dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500" 
-                    placeholder="Search  Notes.." 
-                    required 
+                    <CategoryDropdown
+                        categories={categories}
+                        loading={loading}
+                        selectedCategory={selectedCategory}
+                        onCategorySelect={selectCategory}
+                        isOpen={isDropdownOpen}
+                        onToggle={() => {
+                            toggleDropdown();
+                            if (isSearching) {
+                                handleClearSearch();
+                            } else {
+                                setCurrentView('notes');
+                            }
+                        }}
                     />
-                    <button type="submit" className="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-white bg-blue-700 rounded-e-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                        <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                        </svg>
-                        <span className="sr-only">Search</span>
-                    </button>
-                </div>
-                    
+                    <div className="relative w-100">
+                        <input 
+                            type="search" 
+                            id="search-dropdown" 
+                            className="block py-2.5 pl-4 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500" 
+                            placeholder="Search Notes.." 
+                            value={searchQuery}
+                            onChange={handleSearchInputChange}
+                        />
+                        {isSearching && searchQuery && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="absolute top-1/2 right-12 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
+                        <button type="submit" className="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-white bg-blue-700 rounded-e-lg border border-blue-700 hover:bg-blue-600 focus:ring-4 focus:outline-none  dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                            <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                            </svg>
+                            <span className="sr-only">Search</span>
+                        </button>
+                    </div>
                 </div>
             </form>
 
@@ -467,9 +657,16 @@ function Notes() {
             {/* Display Notes */}
             <div className="p-4 max-w-7xl mx-auto">
                 <div className="mb-4 flex justify-between items-center flex-wrap gap-4">
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        {currentView === 'recycled' ? 'Recycled Notes' : 'Notes'}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                            {isSearching ? 'Search Results' : currentView === 'recycled' ? 'Recycled Notes' : 'Notes'}
+                        </h2>
+                        {isSearching && (
+                            <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                                for "{searchQuery}"
+                            </span>
+                        )}
+                    </div>
                     <div className="flex items-center gap-4">
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                             {pagination.totalNotesCount} total notes

@@ -253,12 +253,17 @@ export const notesAPI = {
     return response.data;
   },
 
-  // downloadNote: async (id) => {
-  //   const response = await api.get(`/api/v1/notes/download/${id}`, {
-  //     responseType: 'blob',
-  //   });
-  //   return response.data;
-  // }
+  downloadNote: async (id) => {
+    const response = await api.get(`/api/v1/notes/download/${id}`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  copyNote: async (id) => {
+    const response = await api.get(`/api/v1/notes/copy/${id}`);
+    return response.data;
+  },
 
   createNote: async (data) => {
     const formData = new FormData();
@@ -300,7 +305,8 @@ export const notesAPI = {
     
     formData.append('notes', JSON.stringify(notesData));
     
-    if (data.file) {
+    if (data.file!== undefined) {
+      console.log("File present " , data.file);
       formData.append('file', data.file);
     }
 
