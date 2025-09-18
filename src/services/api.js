@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { tokenManager } from '../utils/tokenManager';
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'http://server.steel.udaykhare.social';
 
 // Configure axios with base URL and content type
 const api = axios.create({
@@ -468,9 +468,94 @@ export const chatAPI = {
   },
 };
 
+// export const oauthUrls = {
+//   github: `${API_BASE_URL}/oauth2/authorization/github`,
+//   google: `${API_BASE_URL}/oauth2/authorization/google`,
+
+// };
+
+
+
+
+// AI Chat API
+export const aiChatAPI = {
+ // Chat session management
+ createChatSession: async (title) => {
+   const response = await api.post("/api/chat/sessions", { title });
+   return response.data;
+ },
+
+ getUserChatSessions: async () => {
+   const response = await api.get("/api/chat/sessions");
+   return response.data;
+ },
+
+ getChatSession: async (sessionId) => {
+   const response = await api.get(`/api/chat/sessions/${sessionId}`);
+   return response.data;
+ },
+
+ getSessionMessages: async (sessionId) => {
+   const response = await api.get(`/api/chat/sessions/${sessionId}/messages`);
+   return response.data;
+ },
+
+ deleteChatSession: async (sessionId) => {
+   const response = await api.delete(`/api/chat/sessions/${sessionId}`);
+   return response.data;
+ },
+
+ updateChatSession: async (sessionId, data) => {
+   const response = await api.put(`/api/chat/sessions/${sessionId}`, data);
+   return response.data;
+ },
+
+ // AI interactions
+ sendMessage: async (prompt, sessionId) => {
+   const formData = new FormData();
+   formData.append("prompt", prompt);
+   formData.append("sessionId", sessionId);
+
+   const response = await api.post("/api/ai/chat", formData, {
+     headers: {
+       "Content-Type": "multipart/form-data",
+     },
+   });
+   return response.data;
+ },
+
+ sendMessageWithSpeech: async (prompt, sessionId) => {
+   const formData = new FormData();
+   formData.append("prompt", prompt);
+   formData.append("sessionId", sessionId);
+
+   const response = await api.post("/api/ai/chat/speech", formData, {
+     headers: {
+       "Content-Type": "multipart/form-data",
+     },
+     responseType: "blob",
+   });
+   return response.data;
+ },
+
+ sendVoiceMessage: async (audioFile, sessionId) => {
+   const formData = new FormData();
+   formData.append("audio", audioFile);
+   formData.append("sessionId", sessionId);
+
+   const response = await api.post("/api/ai/chat/voice", formData, {
+     headers: {
+       "Content-Type": "multipart/form-data",
+     },
+     responseType: "blob",
+   });
+   return response.data;
+ },
+};
+
 export const oauthUrls = {
-  github: `${API_BASE_URL}/oauth2/authorization/github`,
-  google: `${API_BASE_URL}/oauth2/authorization/google`,
+ github: `${API_BASE_URL}/oauth2/authorization/github`,
+ google: `${API_BASE_URL}/oauth2/authorization/google`,
 };
 
 export default api;
