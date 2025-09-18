@@ -66,6 +66,8 @@ export const useAuthStore = create((set, get) => ({
     const urls = {
       github: 'http://localhost:8080/oauth2/authorization/github',
       google: 'http://localhost:8080/oauth2/authorization/google'
+      // github: 'http://2d63c1dad52b.ngrok-free.app/oauth2/authorization/github',
+      // google: 'http://2d63c1dad52b.ngrok-free.app/oauth2/authorization/google'
     };
     window.location.href = urls[provider];
   },

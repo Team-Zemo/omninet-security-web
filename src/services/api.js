@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { tokenManager } from '../utils/tokenManager';
 
-const API_BASE_URL = 'http://server.steel.udaykhare.social';
+const API_BASE_URL = 'http://localhost:8080';
+// const API_BASE_URL = 'http://2d63c1dad52b.ngrok-free.app/';
 
 // Configure axios with base URL and content type
 const api = axios.create({
@@ -431,7 +432,7 @@ export const storageAPI = {
 
   //Api to delete a file
   deleteFile: async (fileName) => {
-    const response = await api.delete(`/api/storage/files`,);
+    const response = await api.delete(`/api/storage/files/${fileName}`);
     return response.data;
   },
 

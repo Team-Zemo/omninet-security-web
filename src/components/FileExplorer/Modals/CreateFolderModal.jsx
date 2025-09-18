@@ -19,10 +19,10 @@ const CreateFolderModal = ({ onConfirm, onCancel }) => {
     
     const trimmedName = name.trim();
     
-    // Check for invalid characters
-    const invalidChars = /[<>:"/\\|?*]/;
-    if (invalidChars.test(trimmedName)) {
-      return 'Folder name contains invalid characters: < > : " / \\ | ? *';
+    // Check for invalid characters (backend only allows alphanumeric, dots, hyphens, underscores, and forward slashes)
+    const validChars = /^[a-zA-Z0-9.\-_/]+$/;
+    if (!validChars.test(trimmedName)) {
+      return 'Folder name can only contain letters, numbers, dots, hyphens, underscores, and forward slashes';
     }
     
     // Check for reserved names

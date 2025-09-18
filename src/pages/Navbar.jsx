@@ -120,10 +120,12 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
           {/* Menu on xs,sm screens */}
           <Box sx={{display: { xs: 'flex',  lg: 'none' } }}>
             <IconButton
+              id="menu-button"
               size="large"
-              aria-label="account of current user"
-              aria-controls="menu-appbar"
+              aria-label="navigation menu"
+              aria-controls={anchorElNav ? "menu-appbar" : undefined}
               aria-haspopup="true"
+              aria-expanded={Boolean(anchorElNav)}
               onClick={handleOpenNavMenu}
               sx={{
                   color: theme.colors.primary,
@@ -153,6 +155,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
               }}
               open={Boolean(anchorElNav)}
               onClose={handleCloseNavMenu}
+              aria-labelledby="menu-button"
               sx={{
                 display: { xs: 'block', md: 'none' },
                 '& .MuiPaper-root': {
@@ -162,6 +165,15 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
                   border: `1px solid ${theme.colors.border}`,
                   boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
                   mt: 1,
+                }
+              }}
+              MenuListProps={{
+                'aria-labelledby': 'menu-button',
+                role: 'menu'
+              }}
+              slotProps={{
+                backdrop: {
+                  'aria-hidden': 'false'
                 }
               }}
             >
@@ -271,7 +283,12 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
           {/* User menu */}
           <Box sx={{ flexGrow: 0 }}>
             <IconButton 
-              onClick={handleOpenUserMenu} 
+              id="user-menu-button"
+              onClick={handleOpenUserMenu}
+              aria-label="user account menu"
+              aria-controls={anchorElUser ? "user-menu-appbar" : undefined}
+              aria-haspopup="true"
+              aria-expanded={Boolean(anchorElUser)}
               sx={{ 
                 p: 0,
                 transition: 'all 0.3s ease',
@@ -316,7 +333,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
                   minWidth: 200,
                 }
               }}
-              id="menu-appbar"
+              id="user-menu-appbar"
               anchorEl={anchorElUser}
               anchorOrigin={{
                 vertical: 'top',
@@ -329,6 +346,16 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
               }}
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
+              aria-labelledby="user-menu-button"
+              MenuListProps={{
+                'aria-labelledby': 'user-menu-button',
+                role: 'menu'
+              }}
+              slotProps={{
+                backdrop: {
+                  'aria-hidden': 'false'
+                }
+              }}
             >
               <Box sx={{ px: 2, py: 1, borderBottom: `1px solid ${theme.colors.borderLight}` }}>
                 <Typography variant="subtitle2" color={theme.colors.fontMuted} fontFamily={theme.font.family}>

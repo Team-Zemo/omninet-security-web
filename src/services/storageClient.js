@@ -209,16 +209,46 @@ export class StorageClient {
 
   // ============ Upload Operations ============
 
+  /**
+   * Sanitize file name to meet backend requirements
+   * Only allows alphanumeric characters, dots, hyphens, underscores, and forward slashes
+   */
+  sanitizeFileName(fileName) {
+    // Replace invalid characters with underscores
+    // Keep alphanumeric, dots, hyphens, underscores, and forward slashes
+    const sanitized = fileName.replace(/[^a-zA-Z0-9.\-_/]/g, '_');
+    
+    // Remove multiple consecutive underscores
+    return sanitized.replace(/_+/g, '_');
+  }
+
+  /**
+   * Check if file name is valid according to backend rules
+   */
+  isValidFileName(fileName) {
+    // Only alphanumeric characters, dots, hyphens, underscores, and forward slashes
+    return /^[a-zA-Z0-9.\-_/]+$/.test(fileName);
+  }
+
   async uploadFile(file, targetPath, onProgress = null) {
     try {
+      // Sanitize the file name
+      const originalFileName = file.name;
+      const sanitizedFileName = this.sanitizeFileName(originalFileName);
+      
+      // Warn user if file name was changed
+      if (originalFileName !== sanitizedFileName) {
+        console.warn(`File name sanitized: "${originalFileName}" → "${sanitizedFileName}"`);
+      }
+
       // Fix path construction to avoid double slashes
       let fileName;
       if (!targetPath || targetPath === '') {
-        fileName = file.name;
+        fileName = sanitizedFileName;
       } else {
         // Remove trailing slash from targetPath if it exists, then add single slash
         const cleanTargetPath = targetPath.replace(/\/+$/, '');
-        fileName = `${cleanTargetPath}/${file.name}`;
+        fileName = `${cleanTargetPath}/${sanitizedFileName}`;
       }
       
       console.log('Requesting upload URL for fileName:', fileName);
@@ -231,7 +261,7 @@ export class StorageClient {
         // Handle validation errors
         if (urlResponse?.status === 'failed' && urlResponse?.data) {
           const errorMessages = Object.values(urlResponse.data).flat();
-          throw new Error(errorMessages.join(', '));
+          throw new Error(`File validation failed: ${errorMessages.join(', ')}`);
         }
         throw new Error(urlResponse?.message || 'Failed to get upload URL');
       }
@@ -242,12 +272,21 @@ export class StorageClient {
       }
 
       console.log('Uploading file to URL:', uploadUrl);
-      await this.uploadToPresignedUrl(file, uploadUrl, onProgress);
+      
+      // Create a new file object with sanitized name if it was changed
+      const fileToUpload = originalFileName !== sanitizedFileName 
+        ? new File([file], sanitizedFileName, { type: file.type })
+        : file;
+      
+      await this.uploadToPresignedUrl(fileToUpload, uploadUrl, onProgress);
 
       return {
         success: true,
         data: {
           fileName,
+          originalFileName,
+          sanitizedFileName,
+          nameChanged: originalFileName !== sanitizedFileName,
           size: file.size,
           type: file.type,
           uploadUrl: uploadUrl,

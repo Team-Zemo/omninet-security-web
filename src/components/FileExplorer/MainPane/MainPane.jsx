@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaFolder, FaFile, FaImage, FaVideo, FaMusic, FaFileAlt, FaFileArchive } from 'react-icons/fa';
 // import './MainPane.css';
 
@@ -170,6 +170,8 @@ const MainPane = ({
   onDragOver,
   onDrop
 }) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+
   const handleMainPaneClick = (e) => {
     // Check if the click is on the main pane itself or its direct children (not on an item)
     const isClickOnItem = e.target.closest('[data-file-item]');
@@ -188,6 +190,36 @@ const MainPane = ({
     }
     // Always show context menu when right-clicking on main pane
     onContextMenu(e);
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+    onDragEnter?.(e);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set drag over to false if we're leaving the main pane completely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragOver(false);
+    }
+    onDragLeave?.(e);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDragOver?.(e);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    onDrop?.(e);
   };
 
   if (loading) {
@@ -215,14 +247,23 @@ const MainPane = ({
 
   return (
     <div 
-      className="flex-1 bg-white overflow-hidden"
+      className={`flex-1 bg-white overflow-hidden relative ${isDragOver ? 'bg-blue-50' : ''}`}
       onClick={handleMainPaneClick}
       onContextMenu={handleMainPaneContextMenu}
-      onDragEnter={onDragEnter}
-      onDragLeave={onDragLeave}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
+      {isDragOver && (
+        <div className="absolute inset-0 bg-blue-100 bg-opacity-50 border-2 border-dashed border-blue-400 z-10 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-4xl mb-2">📁</div>
+            <p className="text-lg font-semibold text-blue-700">Drop files here to upload</p>
+          </div>
+        </div>
+      )}
+      
       <div className="h-full overflow-y-auto main-pane-content">
         {items.length === 0 ? (
           <div className="flex items-center justify-center h-full">

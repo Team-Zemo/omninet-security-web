@@ -149,8 +149,51 @@ const FileExplorer = () => {
     }
   };
 
+  // Drag and drop
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    console.log('Drag enter, counter:', dragCounter.current);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    console.log('Drag leave, counter:', dragCounter.current);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Set the drop effect to copy
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    
+    console.log('Files dropped:', e.dataTransfer.files);
+    
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      console.log('Processing', droppedFiles.length, 'dropped files');
+      await handleUpload(droppedFiles);
+    } else {
+      console.log('No files in drop event');
+    }
+  };
+
   const handleUpload = async (files) => {
-    if (!files.length) return;
+    if (!files.length) {
+      console.log('No files to upload');
+      return;
+    }
+
+    console.log('Starting upload of', files.length, 'files to path:', currentPath);
 
     setShowProgress(true);
     setProgressInfo({
@@ -160,9 +203,15 @@ const FileExplorer = () => {
       currentItem: ''
     });
 
+    let successCount = 0;
+    let errorCount = 0;
+    const warnings = [];
+
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        console.log(`Uploading file ${i + 1}/${files.length}:`, file.name);
+        
         setProgressInfo(prev => ({
           ...prev,
           current: i + 1,
@@ -176,16 +225,39 @@ const FileExplorer = () => {
           }));
         });
 
-        if (!result.success) {
+        if (result.success) {
+          successCount++;
+          console.log(`Successfully uploaded: ${file.name}`);
+          
+          // Check if file name was sanitized
+          if (result.data.nameChanged) {
+            warnings.push(`"${result.data.originalFileName}" was renamed to "${result.data.sanitizedFileName}" to meet file name requirements`);
+          }
+        } else {
+          errorCount++;
+          console.error(`Failed to upload ${file.name}:`, result.error);
           toast.error(`Failed to upload ${file.name}: ${result.error}`);
         }
       }
 
-      toast.success(`Successfully uploaded ${files.length} file(s)`);
-      await loadContents();
-      // Refresh sidebar in case folders were uploaded
-      sidebarRef.current?.refresh();
+      // Show success message
+      if (successCount > 0) {
+        toast.success(`Successfully uploaded ${successCount} file(s)`);
+        await loadContents();
+        // Refresh sidebar in case folders were uploaded
+        sidebarRef.current?.refresh();
+      }
+      
+      // Show warnings for sanitized file names
+      warnings.forEach(warning => {
+        toast.warning(warning, { autoClose: 7000 });
+      });
+      
+      if (errorCount > 0) {
+        toast.error(`Failed to upload ${errorCount} file(s)`);
+      }
     } catch (error) {
+      console.error('Upload operation failed:', error);
       toast.error('Upload operation failed');
     } finally {
       setShowProgress(false);
@@ -372,31 +444,6 @@ const FileExplorer = () => {
 
   const closeContextMenu = () => {
     setContextMenu({ show: false, x: 0, y: 0, item: null });
-  };
-
-  // Drag and drop
-  const handleDragEnter = (e) => {
-    e.preventDefault();
-    dragCounter.current++;
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    dragCounter.current--;
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (e) => {
-    e.preventDefault();
-    dragCounter.current = 0;
-    
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      await handleUpload(files);
-    }
   };
 
   // Keyboard shortcuts
