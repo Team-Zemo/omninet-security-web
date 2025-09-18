@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useAiChat } from "../../hooks/useAiChat";
 
 const formatTime = (timestamp) =>
@@ -137,7 +139,15 @@ const Message = ({ message }) => {
             : "bg-blue-500 text-white rounded-br-none"
         }`}
       >
-        <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+        {isAssistant ? (
+          <div className="prose prose-sm max-w-none text-gray-800 prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:p-3 prose-pre:rounded-lg prose-code:before:content-[''] prose-code:after:content-['']">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {message.content || ""}
+            </ReactMarkdown>
+          </div>
+        ) : (
+          <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+        )}
         <div
           className={`text-xs mt-1 ${
             isAssistant ? "text-gray-500 text-left" : "text-blue-100 text-right"
@@ -151,7 +161,7 @@ const Message = ({ message }) => {
 };
 
 const MessageArea = ({ messages, isLoading, messagesEndRef }) => (
-  <div className="flex-1 overflow-y-auto p-4 min-h-0">
+  <div className="flex-1 overflow-y-auto p-4 min-h-0 chat-bg-violet">
     <div className="max-w-4xl mx-auto space-y-4">
       {messages.map((msg) => (
         <Message key={msg.id} message={msg} />
@@ -182,7 +192,7 @@ const MessageArea = ({ messages, isLoading, messagesEndRef }) => (
 );
 
 const WelcomeScreen = ({ onStartNewChat }) => (
-  <div className="flex-1 flex items-center justify-center h-full p-4">
+  <div className="flex-1 flex items-center justify-center h-full p-4 chat-bg-violet">
     <div className="text-center">
       <div className="w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 p-1">
         <img
