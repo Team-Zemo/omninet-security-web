@@ -339,31 +339,39 @@ function Notes() {
         }
     };
 
-    const handleCopyNote = (note) => {
+    const handleCopyNote = async (note) => {
         try {
-            notesAPI.copyNote(note.id).then((response) => {
-                if (response.status === 'success') {
-                    // Refresh the current view after copying
-                    if (isSearching) {
-                        handleSearch({ preventDefault: () => {} });
-                    } else if (currentView === 'recycled') {
-                        handleRecycleBin();
-                    } else {
-                        fetchAndFilterNotes(selectedCategory, pagination.pageNo, pagination.pageSize);
-                    }
-                    
-                    toast.success('Note copied successfully!', {
-                        duration: 3000,
-                        position: 'top-right',
-                    });
-                }
-            });
-        } catch (error) {
-            console.error('Error copying note:', error);
-            toast.error('Failed to copy note. Please try again.', {
-                duration: 4000,
+            // Copy the note description to clipboard
+            await navigator.clipboard.writeText(note.description);
+            
+            toast.success('Note description copied to clipboard!', {
+                duration: 3000,
                 position: 'top-right',
             });
+        } catch (error) {
+            console.error('Error copying note description:', error);
+            
+            // Fallback for older browsers
+            try {
+                const textArea = document.createElement('textarea');
+                textArea.value = note.description;
+                document.body.appendChild(textArea);
+                textArea.select();
+                textArea.setSelectionRange(0, 99999); // For mobile devices
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                toast.success('Note description copied to clipboard!', {
+                    duration: 3000,
+                    position: 'top-right',
+                });
+            } catch (fallbackError) {
+                console.error('Fallback copy failed:', fallbackError);
+                toast.error('Failed to copy note description. Please try again.', {
+                    duration: 4000,
+                    position: 'top-right',
+                });
+            }
         }
     };
 

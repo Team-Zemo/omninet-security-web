@@ -60,7 +60,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
     { name: 'Storage', path: '/home/storage', icon: <StorageIcon /> },
     { name: 'Todo', path: '/home/todo', icon: <TodoIcon /> },
     { name: 'Notes', path: '/home/notes', icon: <NotesIcon /> },
-    { name: 'Profile', path: '/home/profile', icon: <ProfileIcon /> },
+    // { name: 'Profile', path: '/home/profile', icon: <ProfileIcon /> },
     { name: 'Category', path: '/home/category', icon: <CategoryIcon /> },
     { name: 'Chat', path: '/home/chat', icon: <ChatIcon /> },
     { name: 'AI Chat', path: '/home/ai-chat', icon: <ChatIcon /> }
@@ -339,7 +339,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
                 </Typography>
               </Box>
               
-              <MenuItem 
+              {/* <MenuItem 
                 onClick={handleCloseUserMenu}
                 sx={{
                   borderRadius: 2,
@@ -354,9 +354,8 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
               >
                 <SettingsIcon sx={{ mr: 2, color: theme.colors.primaryLight }} />
                 <Typography textAlign="center" fontWeight={500} color={theme.colors.fontBody} fontFamily={theme.font.family}>Settings</Typography>
-              </MenuItem>
+              </MenuItem> */}
               
-              <Divider sx={{ my: 1, borderColor: theme.colors.borderLight }} />
               
               <MenuItem 
                 onClick={() => { handleLogout(); handleCloseUserMenu(); }}
