@@ -16,6 +16,7 @@
     "@heroicons/react": "^2.2.0",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
+    "@stomp/stompjs": "^7.2.0",
     "@tabler/icons-react": "^3.34.1",
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.11.0",
@@ -26,6 +27,8 @@
     "react-hot-toast": "^2.5.2",
     "react-router-dom": "^7.7.1",
     "react-toastify": "^11.0.5",
+    "sockjs-client": "^1.6.1",
+    "stompjs": "^2.3.3",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.13",
     "zustand": "^5.0.7"
