@@ -7,7 +7,7 @@ function FloatingActionButton({
     onShowAllNotes 
 }) {
     return (
-        <div className="fixed bottom-6 right-6 z-50 p-3 rounded-2xl transition-all duration-200">
+        <div className="fixed bottom-30 sm:bottom-6 right-6 z-50 p-3 rounded-2xl transition-all duration-200">
             {/* Backdrop */}
             {isOpen && (
                 <div
