@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { tokenManager } from '../utils/tokenManager';
 
-// export const API_BASE_URL = 'http://localhost:8080';
-export const API_BASE_URL = 'https://dfb0a2d354c0.ngrok-free.app';
+export const API_BASE_URL = 'http://localhost:8080';
+// export const API_BASE_URL = 'https://dfb0a2d354c0.ngrok-free.app';
 
 // Configure axios with base URL and content type
 const api = axios.create({
