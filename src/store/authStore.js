@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { authAPI } from '../services/api';
 import { tokenManager } from '../utils/tokenManager';
+import {API_BASE_URL} from '../services/api';
 
 export const useAuthStore = create((set, get) => ({
   user: null,
@@ -64,8 +65,8 @@ export const useAuthStore = create((set, get) => ({
 
   login: (provider) => {
     const urls = {
-      github: 'http://localhost:8080/oauth2/authorization/github',
-      google: 'http://localhost:8080/oauth2/authorization/google'
+      github: `${API_BASE_URL}/oauth2/authorization/github`,
+      google: `${API_BASE_URL}/oauth2/authorization/google`
       // github: 'http://2d63c1dad52b.ngrok-free.app/oauth2/authorization/github',
       // google: 'http://2d63c1dad52b.ngrok-free.app/oauth2/authorization/google'
     };

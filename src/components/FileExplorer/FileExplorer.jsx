@@ -316,6 +316,8 @@ const FileExplorer = () => {
   const handleDelete = async () => {
     if (!selectedItems.length) return;
 
+    console.log('Deleting items:', selectedItems.map(item => ({ name: item.name, path: item.path, type: item.type })));
+
     setShowProgress(true);
     setProgressInfo({
       title: 'Deleting Items',
@@ -625,6 +627,7 @@ const FileExplorer = () => {
           viewMode={viewMode}
           loading={loading}
           error={error}
+          currentPath={currentPath}
           onItemSelect={handleItemSelect}
           onItemDoubleClick={handleItemDoubleClick}
           onContextMenu={handleContextMenu}
@@ -632,6 +635,15 @@ const FileExplorer = () => {
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
+          onFileUpload={(uploadData) => {
+            // Optional: Handle individual file upload completion
+            console.log('File uploaded:', uploadData.fileName);
+          }}
+          onRefresh={() => {
+            loadContents();
+            // Also refresh sidebar to show any new folders
+            sidebarRef.current?.refresh();
+          }}
         />
       </div>
 

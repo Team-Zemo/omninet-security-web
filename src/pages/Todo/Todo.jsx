@@ -51,7 +51,21 @@ function Todo() {
       }
     } catch (error) {
       console.error('Error fetching todos:', error);
-      toast.error('Failed to fetch todos');
+
+      console.error('Full error details:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+      
+      // Handle specific server errors
+      if (error.response?.status === 500) {
+        toast.error('Server error. Please contact administrator.');
+      } else if (error.code === 'ERR_NETWORK') {
+        toast.error('Network error. Please check your connection.');
+      } else {
+        toast.error('Failed to fetch todos');
+      }
     } finally {
       setLoading(false);
     }

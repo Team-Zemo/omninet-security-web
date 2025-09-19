@@ -135,30 +135,179 @@ export class StorageClient {
 
   async deleteFile(fileName) {
     try {
+      // fileName should be the absolute path from root (e.g., "new_folder/research.pdf")
+      console.log('Deleting file with absolute path:', fileName);
+      
       const response = await storageAPI.deleteFile(fileName);
-      return {
-        success: true,
-        data: response
-      };
+      
+      // Handle the new API response format
+      if (response.success) {
+        return {
+          success: true,
+          data: response.data,
+          message: response.message
+        };
+      } else {
+        return {
+          success: false,
+          error: response.message || 'Failed to delete file'
+        };
+      }
     } catch (error) {
+      console.error('Delete file error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Failed to delete file'
+        error: error.response?.data?.message || error.message || 'Failed to delete file'
       };
     }
   }
 
   async deleteFolder(folderPath) {
     try {
-      const response = await storageAPI.deleteFolder(folderPath);
-      return {
-        success: true,
-        data: response
-      };
+      console.log('Attempting to delete folder:', folderPath);
+      
+      // First, check if folder contains any files or subfolders
+      console.log('Checking folder contents before deletion...');
+      const contents = await this.getContents(folderPath);
+      
+      if (!contents.success) {
+        // If we can't read contents, try direct deletion anyway
+        console.log('Could not read folder contents, attempting direct deletion');
+        return await this.directDeleteFolder(folderPath);
+      }
+
+      const { files, folders } = contents.data;
+      const totalItems = files.length + folders.length;
+      
+      console.log(`Folder contains ${files.length} files and ${folders.length} folders (total: ${totalItems} items)`);
+
+      if (totalItems === 0) {
+        // Folder is empty, use direct deletion
+        console.log('Folder is empty, using direct deletion');
+        return await this.directDeleteFolder(folderPath);
+      } else {
+        // Folder contains items, use recursive deletion
+        console.log('Folder contains items, using recursive deletion');
+        return await this.recursiveDeleteFolder(folderPath);
+      }
+
     } catch (error) {
+      console.error('Delete folder operation failed:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Failed to delete folder'
+        error: error.response?.data?.message || error.message || 'Failed to delete folder'
+      };
+    }
+  }
+
+  /**
+   * Direct folder deletion for empty folders
+   */
+  async directDeleteFolder(folderPath) {
+    try {
+      console.log('Performing direct folder deletion:', folderPath);
+      const response = await storageAPI.deleteFolder(folderPath);
+      
+      console.log('Direct folder deletion successful');
+      return {
+        success: true,
+        data: response,
+        message: 'Successfully deleted empty folder'
+      };
+    } catch (error) {
+      console.error('Direct folder deletion failed:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Failed to delete folder'
+      };
+    }
+  }
+
+  /**
+   * Recursively delete folder contents then the folder itself
+   */
+  async recursiveDeleteFolder(folderPath) {
+    try {
+      console.log('Starting recursive deletion for folder:', folderPath);
+      
+      // Get folder contents (we already know it has content, but get fresh data)
+      const contents = await this.getContents(folderPath);
+      if (!contents.success) {
+        throw new Error(`Failed to read folder contents: ${contents.error}`);
+      }
+
+      const { files, folders } = contents.data;
+      const totalItems = files.length + folders.length;
+      
+      console.log(`Recursively deleting ${files.length} files and ${folders.length} folders from ${folderPath}`);
+
+      // Delete all files first
+      for (const file of files) {
+        // Construct proper file path
+        let filePath;
+        if (file.path) {
+          filePath = file.path;
+        } else {
+          const cleanFolderPath = folderPath.replace(/\/+$/, '');
+          filePath = cleanFolderPath ? `${cleanFolderPath}/${file.name}` : file.name;
+        }
+        
+        console.log('Deleting file:', filePath);
+        
+        const deleteResult = await this.deleteFile(filePath);
+        if (!deleteResult.success) {
+          console.warn(`Failed to delete file ${filePath}:`, deleteResult.error);
+          // Continue with other files even if one fails
+        } else {
+          console.log(`Successfully deleted file: ${filePath}`);
+        }
+      }
+
+      // Recursively delete all subfolders
+      for (const folder of folders) {
+        // Construct proper subfolder path
+        let subFolderPath;
+        if (folder.path) {
+          subFolderPath = folder.path;
+        } else {
+          const cleanFolderPath = folderPath.replace(/\/+$/, '');
+          subFolderPath = cleanFolderPath ? `${cleanFolderPath}/${folder.name}` : folder.name;
+        }
+        
+        console.log('Recursively deleting subfolder:', subFolderPath);
+        
+        // Recursive call to deleteFolder (which will check contents again)
+        const deleteResult = await this.deleteFolder(subFolderPath);
+        if (!deleteResult.success) {
+          console.warn(`Failed to delete subfolder ${subFolderPath}:`, deleteResult.error);
+          // Continue with other folders even if one fails
+        } else {
+          console.log(`Successfully deleted subfolder: ${subFolderPath}`);
+        }
+      }
+
+      // Finally, delete the now-empty folder using direct deletion
+      console.log('All contents deleted, now deleting empty folder:', folderPath);
+      
+      const finalResult = await this.directDeleteFolder(folderPath);
+      if (finalResult.success) {
+        return {
+          success: true,
+          data: finalResult.data,
+          message: `Successfully deleted folder and ${totalItems} items`
+        };
+      } else {
+        return {
+          success: false,
+          error: `Failed to delete folder after clearing contents: ${finalResult.error}`
+        };
+      }
+
+    } catch (error) {
+      console.error('Recursive folder deletion failed for:', folderPath, error);
+      return {
+        success: false,
+        error: error.message || 'Failed to recursively delete folder'
       };
     }
   }
@@ -355,14 +504,162 @@ export class StorageClient {
         throw new Error('Download URL not found in response');
       }
 
-      console.log('Downloading file from URL:', downloadUrl);
+      // Determine file extension and MIME type
+      const fileExtension = fileName.split('.').pop()?.toLowerCase();
+      const viewableExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'svg', 'txt', 'html', 'htm', 'json', 'xml'];
+      
+      if (viewableExtensions.includes(fileExtension)) {
+        // Open viewable files in new tab
+        console.log('Opening viewable file in new tab from URL:', downloadUrl);
+        window.open(downloadUrl, '_blank');
+      } else {
+        // Download non-viewable files
+        console.log('Downloading file from URL:', downloadUrl);
+        
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName.split('/').pop();
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      return {
+        success: true,
+        data: { 
+          fileName, 
+          downloadUrl: downloadUrl,
+          expiresIn: response.data?.expiresIn,
+          action: viewableExtensions.includes(fileExtension) ? 'opened' : 'downloaded'
+        }
+      };
+    } catch (error) {
+      console.error('Download error:', error);
+      return {
+        success: false,
+        error: error.message || 'Download failed'
+      };
+    }
+  }
+
+  /**
+   * Force download a file (always download, never open in tab)
+   */
+  async forceDownloadFile(fileName) {
+    try {
+      console.log('Requesting download URL for fileName:', fileName);
+      
+      const response = await storageAPI.getDownloadUrl(fileName);
+      console.log('Download URL response:', response);
+      
+      if (!response?.success) {
+        if (response?.status === 'failed' && response?.data) {
+          const errorMessages = Object.values(response.data).flat();
+          throw new Error(errorMessages.join(', '));
+        }
+        throw new Error(response?.message || 'Failed to get download URL');
+      }
+      
+      const downloadUrl = response.data?.url;
+      if (!downloadUrl) {
+        throw new Error('Download URL not found in response');
+      }
+
+      console.log('Force downloading file from URL:', downloadUrl);
       
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = fileName.split('/').pop();
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      return {
+        success: true,
+        data: { 
+          fileName, 
+          downloadUrl: downloadUrl,
+          expiresIn: response.data?.expiresIn,
+          action: 'downloaded'
+        }
+      };
+    } catch (error) {
+      console.error('Force download error:', error);
+      return {
+        success: false,
+        error: error.message || 'Download failed'
+      };
+    }
+  }
+
+  /**
+   * Open file in new tab (always open, never download)
+   */
+  async openFileInTab(fileName) {
+    try {
+      console.log('Requesting download URL for fileName:', fileName);
+      
+      const response = await storageAPI.getDownloadUrl(fileName);
+      console.log('Download URL response:', response);
+      
+      if (!response?.success) {
+        if (response?.status === 'failed' && response?.data) {
+          const errorMessages = Object.values(response.data).flat();
+          throw new Error(errorMessages.join(', '));
+        }
+        throw new Error(response?.message || 'Failed to get download URL');
+      }
+      
+      const downloadUrl = response.data?.url;
+      if (!downloadUrl) {
+        throw new Error('Download URL not found in response');
+      }
+
+      console.log('Opening file in new tab from URL:', downloadUrl);
+      window.open(downloadUrl, '_blank');
+
+      return {
+        success: true,
+        data: { 
+          fileName, 
+          downloadUrl: downloadUrl,
+          expiresIn: response.data?.expiresIn,
+          action: 'opened'
+        }
+      };
+    } catch (error) {
+      console.error('Open file error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to open file'
+      };
+    }
+  }
+
+  /**
+   * Get download URL without triggering download or opening
+   */
+  async getFileUrl(fileName) {
+    try {
+      console.log('Requesting download URL for fileName:', fileName);
+      
+      const response = await storageAPI.getDownloadUrl(fileName);
+      console.log('Download URL response:', response);
+      
+      if (!response?.success) {
+        if (response?.status === 'failed' && response?.data) {
+          const errorMessages = Object.values(response.data).flat();
+          throw new Error(errorMessages.join(', '));
+        }
+        throw new Error(response?.message || 'Failed to get download URL');
+      }
+      
+      const downloadUrl = response.data?.url;
+      if (!downloadUrl) {
+        throw new Error('Download URL not found in response');
+      }
 
       return {
         success: true,
@@ -373,10 +670,10 @@ export class StorageClient {
         }
       };
     } catch (error) {
-      console.error('Download error:', error);
+      console.error('Get file URL error:', error);
       return {
         success: false,
-        error: error.message || 'Download failed'
+        error: error.message || 'Failed to get file URL'
       };
     }
   }

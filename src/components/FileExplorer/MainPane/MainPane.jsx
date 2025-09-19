@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaFolder, FaFile, FaImage, FaVideo, FaMusic, FaFileAlt, FaFileArchive } from 'react-icons/fa';
+import { storageClient } from '../../../services/storageClient';
 // import './MainPane.css';
 
 const getFileIcon = (fileName, type) => {
@@ -132,11 +133,7 @@ const ListView = ({ items, selectedItems, onItemSelect, onItemDoubleClick, onCon
           >
             <div className="col-span-5 flex items-center gap-3 min-w-0">
               <div className="flex-shrink-0">
-                {item.type === 'folder' ? (
-                  <FaFolder className="text-yellow-500 text-lg" />
-                ) : (
-                  <FaFile className="text-gray-400 text-lg" />
-                )}
+                {getFileIcon(item.name, item.type)}
               </div>
               <span className="text-sm text-gray-900 truncate">{item.name}</span>
             </div>
@@ -162,15 +159,19 @@ const MainPane = ({
   viewMode, 
   loading, 
   error,
+  currentPath,
   onItemSelect,
   onItemDoubleClick,
   onContextMenu,
   onDragEnter,
   onDragLeave,
   onDragOver,
-  onDrop
+  onDrop,
+  onFileUpload,
+  onRefresh
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState([]);
 
   const handleMainPaneClick = (e) => {
     // Check if the click is on the main pane itself or its direct children (not on an item)
@@ -195,30 +196,140 @@ const MainPane = ({
   const handleDragEnter = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(true);
+    
+    // Only show drag over state if files are being dragged
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true);
+    }
+    
     onDragEnter?.(e);
   };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
     // Only set drag over to false if we're leaving the main pane completely
     if (!e.currentTarget.contains(e.relatedTarget)) {
       setIsDragOver(false);
     }
+    
     onDragLeave?.(e);
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Set the dropEffect to copy to show the correct cursor
+    if (e.dataTransfer.types.includes('Files')) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    
     onDragOver?.(e);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
+    
+    try {
+      const files = Array.from(e.dataTransfer.files);
+      
+      if (files.length === 0) {
+        console.log('No files dropped');
+        return;
+      }
+
+      console.log('Files dropped:', files.map(f => f.name));
+      
+      // Set uploading state
+      const uploadingFilesList = files.map(file => ({
+        name: file.name,
+        size: file.size,
+        progress: 0,
+        status: 'uploading'
+      }));
+      setUploadingFiles(uploadingFilesList);
+
+      // Upload files one by one
+      const uploadResults = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        try {
+          // Update progress for current file
+          setUploadingFiles(prev => prev.map((item, index) => 
+            index === i ? { ...item, status: 'uploading', progress: 0 } : item
+          ));
+
+          const result = await storageClient.uploadFile(
+            file, 
+            currentPath || '', 
+            (progress) => {
+              // Update upload progress
+              setUploadingFiles(prev => prev.map((item, index) => 
+                index === i ? { ...item, progress } : item
+              ));
+            }
+          );
+
+          if (result.success) {
+            // Mark as completed
+            setUploadingFiles(prev => prev.map((item, index) => 
+              index === i ? { ...item, status: 'completed', progress: 100 } : item
+            ));
+            
+            uploadResults.push({ file: file.name, success: true });
+            
+            // Notify parent component about successful upload
+            onFileUpload?.(result.data);
+          } else {
+            // Mark as failed
+            setUploadingFiles(prev => prev.map((item, index) => 
+              index === i ? { ...item, status: 'failed', error: result.error } : item
+            ));
+            
+            uploadResults.push({ file: file.name, success: false, error: result.error });
+            console.error(`Failed to upload ${file.name}:`, result.error);
+          }
+          
+        } catch (error) {
+          // Mark as failed
+          setUploadingFiles(prev => prev.map((item, index) => 
+            index === i ? { ...item, status: 'failed', error: error.message } : item
+          ));
+          
+          uploadResults.push({ file: file.name, success: false, error: error.message });
+          console.error(`Error uploading ${file.name}:`, error);
+        }
+      }
+
+      // Clear uploading state after a delay
+      setTimeout(() => {
+        setUploadingFiles([]);
+        // Refresh the file list to show new uploads
+        onRefresh?.();
+      }, 200);
+
+      // Show summary
+      const successCount = uploadResults.filter(r => r.success).length;
+      const failCount = uploadResults.filter(r => !r.success).length;
+      
+      if (successCount > 0) {
+        console.log(`Successfully uploaded ${successCount} file(s)`);
+      }
+      if (failCount > 0) {
+        console.warn(`Failed to upload ${failCount} file(s)`);
+      }
+
+    } catch (error) {
+      console.error('Drop handling error:', error);
+      setUploadingFiles([]);
+    }
+    
     onDrop?.(e);
   };
 
@@ -260,6 +371,45 @@ const MainPane = ({
           <div className="text-center">
             <div className="text-4xl mb-2">📁</div>
             <p className="text-lg font-semibold text-blue-700">Drop files here to upload</p>
+          </div>
+        </div>
+      )}
+
+      {uploadingFiles.length > 0 && (
+        <div className="absolute top-4 right-4 z-20 bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-sm">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Uploading Files</h3>
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            {uploadingFiles.map((file, index) => (
+              <div key={index} className="text-xs">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="truncate flex-1 mr-2" title={file.name}>
+                    {file.name}
+                  </span>
+                  <span className={`text-xs ${
+                    file.status === 'completed' ? 'text-green-600' :
+                    file.status === 'failed' ? 'text-red-600' :
+                    'text-blue-600'
+                  }`}>
+                    {file.status === 'completed' ? '✓' :
+                     file.status === 'failed' ? '✗' :
+                     `${Math.round(file.progress)}%`}
+                  </span>
+                </div>
+                {file.status === 'uploading' && (
+                  <div className="w-full bg-gray-200 rounded-full h-1">
+                    <div 
+                      className="bg-blue-600 h-1 rounded-full transition-all duration-300"
+                      style={{ width: `${file.progress}%` }}
+                    />
+                  </div>
+                )}
+                {file.status === 'failed' && file.error && (
+                  <div className="text-red-500 text-xs mt-1 truncate" title={file.error}>
+                    {file.error}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

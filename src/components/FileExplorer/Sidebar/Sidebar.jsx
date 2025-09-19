@@ -55,11 +55,11 @@ const FolderTreeNode = ({ node, currentPath, onNavigate, level = 0 }) => {
       <div 
         className={`flex items-center py-1 px-2 cursor-pointer rounded hover:bg-gray-100 ${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
-      >
+        >
         <button
           className="flex items-center justify-center w-4 h-4 mr-2 text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed"
           onClick={handleToggle}
-          disabled={!hasChildren || loading}
+          // disabled={!hasChildren || loading}
         >
           {loading ? (
             <div className="w-3 h-3 border border-gray-300 border-t-blue-500 rounded-full animate-spin" />
@@ -70,7 +70,7 @@ const FolderTreeNode = ({ node, currentPath, onNavigate, level = 0 }) => {
           )}
         </button>
         
-        <button className="flex items-center gap-2 text-sm hover:text-blue-600" onClick={handleClick}>
+        <button className="cursor-pointer w-full flex items-center gap-2 text-sm hover:text-blue-600" onClick={handleClick}>
           {isExpanded ? <FaFolderOpen className="text-yellow-500" /> : <FaFolder className="text-yellow-500" />}
           <span className="truncate">{node.name}</span>
         </button>

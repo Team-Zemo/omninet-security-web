@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { tokenManager } from '../utils/tokenManager';
 
-const API_BASE_URL = 'http://localhost:8080';
+export const API_BASE_URL = 'http://localhost:8080';
 // const API_BASE_URL = 'http://2d63c1dad52b.ngrok-free.app/';
 
 // Configure axios with base URL and content type
@@ -432,13 +432,34 @@ export const storageAPI = {
 
   //Api to delete a file
   deleteFile: async (fileName) => {
-    const response = await api.delete(`/api/storage/files/${fileName}`);
-    return response.data;
+    try {
+      const response = await api.delete("/api/storage/files", {
+        data: { fileName },
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Delete file API response:', response.data);
+      return response.data;
+    } catch(error) {
+      console.error('Delete file error:', error);
+      // Handle error response format
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      throw error;
+    }
   },
 
   //Api to delete a folder. Should provide full path eg- "pop", "pop/opo"
   deleteFolder: async (folderName) => {
-    const response = await api.delete(`/api/storage/folders`, { data: { folderName } });
+    // Use request body instead of URL parameter for folder deletion
+    const response = await api.delete(`/api/storage/folders`, { 
+      data: { folderName },
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
     return response.data;
   }
 };
@@ -468,15 +489,6 @@ export const chatAPI = {
     return response.data;
   },
 };
-
-// export const oauthUrls = {
-//   github: `${API_BASE_URL}/oauth2/authorization/github`,
-//   google: `${API_BASE_URL}/oauth2/authorization/google`,
-
-// };
-
-
-
 
 // AI Chat API
 export const aiChatAPI = {
