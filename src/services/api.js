@@ -566,9 +566,4 @@ export const aiChatAPI = {
  },
 };
 
-export const oauthUrls = {
- github: `${API_BASE_URL}/oauth2/authorization/github`,
- google: `${API_BASE_URL}/oauth2/authorization/google`,
-};
-
 export default api;
