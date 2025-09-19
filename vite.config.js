@@ -12,9 +12,9 @@ export default defineConfig({
         include: ['sockjs-client', 'stompjs']
     },
     server: {
-        allowedHosts: ['steel.udaykhare.social:5173'],
+        allowedHosts: ['steel.udaykhare.social:5173','localhost:5173'],
         port: 5173,
-        host: 'steel.udaykhare.social'
+        host: 'localhost'
     }
 
 })

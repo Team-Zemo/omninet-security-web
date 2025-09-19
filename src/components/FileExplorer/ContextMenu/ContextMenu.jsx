@@ -120,7 +120,7 @@ const ContextMenu = ({
             </button>
           )}
           
-          {!isMultipleSelected && (
+          {/* {!isMultipleSelected && (
             <button 
               className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               onClick={() => handleAction(onRename)}
@@ -128,25 +128,25 @@ const ContextMenu = ({
               <FaEdit className="text-orange-500" />
               <span>Rename</span>
             </button>
-          )}
+          )} */}
           
-          <button 
+          {/* <button 
             className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-400 cursor-not-allowed"
             onClick={() => handleAction(() => {})}
             disabled
           >
             <FaCopy />
             <span>Copy</span>
-          </button>
+          </button> */}
           
-          <button 
+          {/* <button 
             className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-400 cursor-not-allowed"
             onClick={() => handleAction(() => {})}
             disabled
           >
             <FaCut />
             <span>Cut</span>
-          </button>
+          </button> */}
           
           <div className="border-t border-gray-200 my-1" />
           
@@ -158,7 +158,7 @@ const ContextMenu = ({
             <span>Delete</span>
           </button>
           
-          {!isMultipleSelected && (
+          {/* {!isMultipleSelected && (
             <>
               <div className="border-t border-gray-200 my-1" />
               
@@ -171,7 +171,7 @@ const ContextMenu = ({
                 <span>Properties</span>
               </button>
             </>
-          )}
+          )} */}
         </>
       )}
     </div>

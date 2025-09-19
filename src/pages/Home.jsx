@@ -94,7 +94,7 @@ const Home = () => {
           user={user}
         />
         <Routes>
-          <Route path="/" element={<Navigate to="/home/dashboard" replace />} />
+          {/* <Route path="/" element={<Navigate to="/home/dashboard" replace />} /> */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/storage" element={<Storage />} />
           <Route path="/todo" element={<Todo />} />
@@ -105,7 +105,7 @@ const Home = () => {
           <Route path="/ai-chat" element={<AiChat />} />
           <Route
             path="/*"
-            element={<Navigate to="/home/dashboard" replace />}
+            element={<Navigate to="/home/storage" replace />}
           />
         </Routes>
         {/* <Footer /> */}

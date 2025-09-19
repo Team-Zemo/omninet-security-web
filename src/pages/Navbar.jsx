@@ -56,7 +56,7 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
   };
 
   const pages = [
-    { name: 'Dashboard', path: '/home/dashboard', icon: <DashboardIcon /> },
+    // { name: 'Dashboard', path: '/home/dashboard', icon: <DashboardIcon /> },
     { name: 'Storage', path: '/home/storage', icon: <StorageIcon /> },
     { name: 'Todo', path: '/home/todo', icon: <TodoIcon /> },
     { name: 'Notes', path: '/home/notes', icon: <NotesIcon /> },
