@@ -1,3 +1,3 @@
-const base_serverurl = "http://server.steel.udaykhare.social"
+const base_serverurl = "http://steel.udaykhare.social:8080"
 
-export default base_serverurl;
+export {base_serverurl};
