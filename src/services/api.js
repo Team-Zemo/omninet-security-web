@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { tokenManager } from '../utils/tokenManager';
+import {base_serverurl} from "../store/constStrings.js";
 
-export const API_BASE_URL = 'http://localhost:8080';
-// export const API_BASE_URL = 'https://dfb0a2d354c0.ngrok-free.app';
+export const API_BASE_URL = base_serverurl
 
 // Configure axios with base URL and content type
 const api = axios.create({
@@ -189,6 +189,14 @@ export const authAPI = {
   addPassword: (email, password) =>
     api.post(`/api/auth/add-password`,
       `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    ),
+
+  // Change password for accounts with email linked
+  changePassword: (currentPassword, newPassword) =>
+    api.post(
+      `/api/auth/change-password`,
+      `currentPassword=${encodeURIComponent(currentPassword)}&newPassword=${encodeURIComponent(newPassword)}`,
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
     ),
 };

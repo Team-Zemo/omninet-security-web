@@ -43,7 +43,6 @@ export const useChatStore = create((set, get) => ({
         throw new Error('No authentication token available');
       }
 
-      // const socket = new SockJS('http://server.steel.udaykhare.social/ws');
       const socket = new SockJS(`${API_BASE_URL}/ws`);
       const client = new Client({
         webSocketFactory: () => socket,

@@ -60,10 +60,10 @@ const Navbar = ({ handleLogout, handleLogoutAll, user}) => {
     { name: 'Storage', path: '/home/storage', icon: <StorageIcon /> },
     { name: 'Todo', path: '/home/todo', icon: <TodoIcon /> },
     { name: 'Notes', path: '/home/notes', icon: <NotesIcon /> },
-    // { name: 'Profile', path: '/home/profile', icon: <ProfileIcon /> },
     { name: 'Category', path: '/home/category', icon: <CategoryIcon /> },
     { name: 'Chat', path: '/home/chat', icon: <ChatIcon /> },
-    { name: 'AI Chat', path: '/home/ai-chat', icon: <ChatIcon /> }
+    { name: 'AI Chat', path: '/home/ai-chat', icon: <ChatIcon /> },
+    { name: 'Profile', path: '/home/profile', icon: <ProfileIcon /> }
   ];
   return (
     <AppBar 

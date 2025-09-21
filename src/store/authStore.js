@@ -67,8 +67,6 @@ export const useAuthStore = create((set, get) => ({
     const urls = {
       github: `${API_BASE_URL}/oauth2/authorization/github`,
       google: `${API_BASE_URL}/oauth2/authorization/google`
-      // github: 'http://2d63c1dad52b.ngrok-free.app/oauth2/authorization/github',
-      // google: 'http://2d63c1dad52b.ngrok-free.app/oauth2/authorization/google'
     };
     window.location.href = urls[provider];
   },
@@ -298,5 +296,82 @@ export const useAuthStore = create((set, get) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  // Add or set a password for current user (for OAuth accounts that want password login)
+  addPassword: async ({ email, password, confirmPassword }) => {
+    try {
+      set({ isLoading: true, error: null });
+
+      const stateUser = get().user;
+      const targetEmail = email || stateUser?.email;
+      if (!targetEmail) throw new Error('Email is required');
+      if (!password) throw new Error('Password is required');
+      if (password !== confirmPassword) throw new Error('Passwords do not match');
+
+      const response = await authAPI.addPassword(targetEmail, password);
+
+      // If success, mark user as having password in attributes
+      if (response?.success) {
+        const updatedUser = {
+          ...stateUser,
+          attributes: {
+            ...(stateUser?.attributes || {}),
+            hasPassword: true,
+          },
+        };
+        set({ user: updatedUser, isLoading: false });
+      } else {
+        set({ isLoading: false });
+      }
+
+      return response;
+    } catch (error) {
+      console.error('addPassword error:', error);
+      const message = error?.response?.data?.message || error.message || 'Failed to add password';
+      set({ isLoading: false, error: message });
+      throw error;
+    }
+  },
+
+  // Backward-compatible alias for requested name
+  addPasword: async (args) => await get().addPassword(args),
+
+  // Change password (only if email is in linked providers)
+  changePassword: async ({ currentPassword, newPassword, confirmPassword }) => {
+    try {
+      set({ isLoading: true, error: null });
+
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        throw new Error('All password fields are required');
+      }
+      if (newPassword !== confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+
+      const user = get().user;
+      const rawLinked = user?.linkedProviders ?? user?.attributes?.linkedProviders ?? [];
+      const linked = Array.isArray(rawLinked)
+        ? rawLinked.map((p) => String(p).toLowerCase())
+        : typeof rawLinked === 'string'
+          ? rawLinked
+              .split(/[\s,]+/)
+              .map((p) => p.trim().toLowerCase())
+              .filter(Boolean)
+          : [];
+
+      if (!linked.includes('email')) {
+        throw new Error('Email provider is not linked to this account');
+      }
+
+      const response = await authAPI.changePassword(currentPassword, newPassword);
+      set({ isLoading: false });
+      return response;
+    } catch (error) {
+      console.error('changePassword error:', error);
+      const message = error?.response?.data?.message || error.message || 'Failed to change password';
+      set({ isLoading: false, error: message });
+      throw error;
+    }
   },
 }));
