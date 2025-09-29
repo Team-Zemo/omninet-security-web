@@ -5,7 +5,7 @@ import ContactList from '../../components/Chat/ContactList';
 import MessageArea from '../../components/Chat/MessageArea';
 import MessageComposer from '../../components/Chat/MessageComposer';
 import AddContactModal from '../../components/Chat/AddContactModal';
-import toast from 'react-hot-toast';
+import CallModal from '../../components/Chat/CallModal';
 
 function Chat() {
   const [addContactOpen, setAddContactOpen] = useState(false);
@@ -222,6 +222,9 @@ function Chat() {
         onClose={handleCloseAddContact}
       />
 
+      {/* WebRTC Call Modal */}
+      <CallModal />
+
       {/* Connection Status Toast */}
       <div className={`fixed bottom-6 left-6 transform transition-all duration-500 ease-out ${showConnectionToast ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-12 opacity-0 scale-95 pointer-events-none'}`}>
         <div className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-3 rounded-xl shadow-lg border border-emerald-400/30 backdrop-blur-sm flex items-center space-x-3 animate-bounce-in">
@@ -278,3 +281,4 @@ function Chat() {
 }
 
 export default Chat;
+

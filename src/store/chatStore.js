@@ -3,7 +3,7 @@ import { chatAPI } from '../services/api';
 import { tokenManager } from '../utils/tokenManager';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
-import {API_BASE_URL} from '../services/api';
+import { API_BASE_URL } from '../services/api';
 
 export const useChatStore = create((set, get) => ({
   // Connection state
@@ -48,77 +48,208 @@ export const useChatStore = create((set, get) => ({
         webSocketFactory: () => socket,
         debug: () => {}, // Disable debug logging
         connectHeaders: {
-          'Authorization': `Bearer ${token}`,
-          'userEmail': get().getCurrentUserEmail()
+          'Authorization': `Bearer ${token}`
         },
         onConnect: (frame) => {
           console.log('Connected to WebSocket:', frame);
           
-          // Subscribe to user's message queue
+          // Get user email for subscriptions
           const userEmail = get().getCurrentUserEmail();
           if (userEmail) {
-            // Subscribe to messages
-            const messageHandlers = [
-              `/queue/messages-${userEmail}`,
-              `/user/queue/messages`
-            ];
-            messageHandlers.forEach(dest => {
-              try {
-                client.subscribe(dest, (message) => {
-                  try {
-                    const messageData = JSON.parse(message.body);
-                    console.debug('[CHAT] Incoming message via', dest, messageData);
-                    get().handleIncomingMessage(messageData);
-                  } catch (e) {
-                    console.warn('[CHAT] Failed to parse message body', e);
-                  }
-                });
-              } catch (e) {
-                console.warn('[CHAT] Failed subscribing to', dest, e);
-              }
-            });
+            console.log('Setting up subscriptions for user:', userEmail);
 
-            // Subscribe to read receipts
-            const readHandlers = [
-              `/queue/read-${userEmail}`,
-              `/user/queue/read`
-            ];
-            readHandlers.forEach(dest => {
-              try {
-                client.subscribe(dest, (message) => {
-                  try {
-                    const readData = JSON.parse(message.body);
-                    console.debug('[CHAT] Read receipt via', dest, readData);
-                    get().handleReadReceipt(readData);
-                  } catch (e) {
-                    console.warn('[CHAT] Failed to parse read receipt', e);
-                  }
-                });
-              } catch (e) {
-                console.warn('[CHAT] Failed subscribing to', dest, e);
-              }
-            });
+            // Text chat subscriptions
+            try {
+              // Subscribe to incoming messages
+              client.subscribe(`/queue/messages-${userEmail}`, (message) => {
+                try {
+                  const messageData = JSON.parse(message.body);
+                  console.debug('[CHAT] Incoming message:', messageData);
+                  get().handleIncomingMessage(messageData);
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse message:', e);
+                }
+              });
 
-            // Subscribe to typing indicators
-            const typingHandlers = [
-              `/queue/typing-${userEmail}`,
-              `/user/queue/typing`
-            ];
-            typingHandlers.forEach(dest => {
-              try {
-                client.subscribe(dest, (message) => {
-                  try {
-                    const typingData = JSON.parse(message.body);
-                    console.debug('[CHAT] Typing indicator via', dest, typingData);
-                    get().handleTypingIndicator(typingData);
-                  } catch (e) {
-                    console.warn('[CHAT] Failed to parse typing payload', e);
-                  }
+              // Also subscribe to user destination for messages
+              client.subscribe('/user/queue/messages', (message) => {
+                try {
+                  const messageData = JSON.parse(message.body);
+                  console.debug('[CHAT] Incoming message (user):', messageData);
+                  get().handleIncomingMessage(messageData);
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse message (user):', e);
+                }
+              });
+
+              // Subscribe to read receipts
+              client.subscribe(`/queue/read-${userEmail}`, (message) => {
+                try {
+                  const readData = JSON.parse(message.body);
+                  console.debug('[CHAT] Read receipt:', readData);
+                  get().handleReadReceipt(readData);
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse read receipt:', e);
+                }
+              });
+
+              client.subscribe('/user/queue/read', (message) => {
+                try {
+                  const readData = JSON.parse(message.body);
+                  console.debug('[CHAT] Read receipt (user):', readData);
+                  get().handleReadReceipt(readData);
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse read receipt (user):', e);
+                }
+              });
+
+              // Subscribe to typing indicators
+              client.subscribe(`/queue/typing-${userEmail}`, (message) => {
+                try {
+                  const typingData = JSON.parse(message.body);
+                  console.debug('[CHAT] Typing indicator:', typingData);
+                  get().handleTypingIndicator(typingData);
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse typing indicator:', e);
+                }
+              });
+
+              client.subscribe('/user/queue/typing', (message) => {
+                try {
+                  const typingData = JSON.parse(message.body);
+                  console.debug('[CHAT] Typing indicator (user):', typingData);
+                  get().handleTypingIndicator(typingData);
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse typing indicator (user):', e);
+                }
+              });
+
+              // Call-related subscriptions
+              // Call offers
+              client.subscribe(`/queue/call-offer-${userEmail}`, (message) => {
+                try {
+                  const offerData = JSON.parse(message.body);
+                  console.debug('[CHAT] Call offer:', offerData);
+                  get().handleCallMessage({ ...offerData, type: 'CALL_OFFER' });
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse call offer:', e);
+                }
+              });
+
+              client.subscribe('/user/queue/call-offer', (message) => {
+                try {
+                  const offerData = JSON.parse(message.body);
+                  console.debug('[CHAT] Call offer (user):', offerData);
+                  get().handleCallMessage({ ...offerData, type: 'CALL_OFFER' });
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse call offer (user):', e);
+                }
+              });
+
+              // Call responses
+              client.subscribe(`/queue/call-response-${userEmail}`, (message) => {
+                try {
+                  const responseData = JSON.parse(message.body);
+                  console.debug('[CHAT] Call response:', responseData);
+                  get().handleCallMessage({ ...responseData, type: 'CALL_RESPONSE' });
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse call response:', e);
+                }
+              });
+
+              client.subscribe('/user/queue/call-response', (message) => {
+                try {
+                  const responseData = JSON.parse(message.body);
+                  console.debug('[CHAT] Call response (user):', responseData);
+                  get().handleCallMessage({ ...responseData, type: 'CALL_RESPONSE' });
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse call response (user):', e);
+                }
+              });
+
+              // ICE candidates
+              client.subscribe(`/queue/ice-candidate-${userEmail}`, (message) => {
+                try {
+                  const candidateData = JSON.parse(message.body);
+                  console.debug('[CHAT] ICE candidate:', candidateData);
+                  get().handleCallMessage({ ...candidateData, type: 'ICE_CANDIDATE' });
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse ICE candidate:', e);
+                }
+              });
+
+              client.subscribe('/user/queue/ice-candidate', (message) => {
+                try {
+                  const candidateData = JSON.parse(message.body);
+                  console.debug('[CHAT] ICE candidate (user):', candidateData);
+                  get().handleCallMessage({ ...candidateData, type: 'ICE_CANDIDATE' });
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse ICE candidate (user):', e);
+                }
+              });
+
+              // Call status updates
+              client.subscribe(`/queue/call-status-${userEmail}`, (message) => {
+                try {
+                  const statusData = JSON.parse(message.body);
+                  console.debug('[CHAT] Call status:', statusData);
+                  get().handleCallMessage({ ...statusData, type: 'CALL_STATUS' });
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse call status:', e);
+                }
+              });
+
+              client.subscribe('/user/queue/call-status', (message) => {
+                try {
+                  const statusData = JSON.parse(message.body);
+                  console.debug('[CHAT] Call status (user):', statusData);
+                  get().handleCallMessage({ ...statusData, type: 'CALL_STATUS' });
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse call status (user):', e);
+                }
+              });
+
+              // Call end notifications
+              client.subscribe(`/queue/call-end-${userEmail}`, (message) => {
+                try {
+                  const endData = JSON.parse(message.body);
+                  console.debug('[CHAT] Call end:', endData);
+                  get().handleCallMessage({ ...endData, type: 'CALL_END' });
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse call end:', e);
+                }
+              });
+
+              client.subscribe('/user/queue/call-end', (message) => {
+                try {
+                  const endData = JSON.parse(message.body);
+                  console.debug('[CHAT] Call end (user):', endData);
+                  get().handleCallMessage({ ...endData, type: 'CALL_END' });
+                } catch (e) {
+                  console.warn('[CHAT] Failed to parse call end (user):', e);
+                }
+              });
+
+              // Error message subscriptions
+              client.subscribe('/user/queue/errors', (message) => {
+                console.error('[WS ERROR]:', message.body);
+                set({ error: message.body });
+              });
+
+              client.subscribe('/user/queue/call-errors', (message) => {
+                console.error('[CALL ERROR]:', message.body);
+                // Handle call-specific errors
+                get().handleCallMessage({
+                  type: 'CALL_ERROR',
+                  error: message.body
                 });
-              } catch (e) {
-                console.warn('[CHAT] Failed subscribing to', dest, e);
-              }
-            });
+              });
+
+              console.log('All WebSocket subscriptions established successfully');
+
+            } catch (subscriptionError) {
+              console.error('Failed to set up subscriptions:', subscriptionError);
+            }
           }
 
           set({ 
@@ -142,6 +273,13 @@ export const useChatStore = create((set, get) => ({
             connecting: false, 
             connected: false,
             error: 'WebSocket connection failed'
+          });
+        },
+        onDisconnect: () => {
+          console.log('WebSocket disconnected');
+          set({
+            connected: false,
+            stompClient: null
           });
         }
       });
@@ -184,11 +322,12 @@ export const useChatStore = create((set, get) => ({
       content
     };
 
+    // Send via WebSocket using the correct destination from API docs
     state.stompClient.publish({
       destination: '/app/chat.send',
       body: JSON.stringify(messageData)
     });
-    console.debug('[CHAT] Sent message payload', messageData);
+    console.debug('[CHAT] Sent message:', messageData);
 
     // Add optimistic message to local state
     const tempMessage = {
@@ -204,10 +343,10 @@ export const useChatStore = create((set, get) => ({
   },
 
   handleIncomingMessage: (message) => {
-    console.debug('[CHAT] handleIncomingMessage', message);
+    console.debug('[CHAT] Processing incoming message:', message);
     get().addMessage(message);
     
-    // Update contact's last message
+    // Update contact's last message and unread count
     const contacts = get().contacts.map(contact => {
       if (contact.email === message.senderEmail) {
         return {
@@ -228,13 +367,13 @@ export const useChatStore = create((set, get) => ({
     const conversationKey = get().getConversationKey(message.senderEmail, message.receiverEmail);
     const currentMessages = state.messages[conversationKey] || [];
     
-    // Avoid duplicates by ID. This is the most reliable way.
+    // Avoid duplicates by ID
     const exists = currentMessages.some(m => m.id === message.id);
     if (exists) {
       return;
     }
 
-    // If the incoming message has a real ID, remove any temp message that matches.
+    // Remove temp message if real message arrives
     let newMessages = [...currentMessages];
     if (message.id && !message.id.startsWith('temp-')) {
       newMessages = newMessages.filter(m => {
@@ -246,7 +385,6 @@ export const useChatStore = create((set, get) => ({
     }
     
     newMessages.push(message);
-    
     newMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
     set({
@@ -263,31 +401,30 @@ export const useChatStore = create((set, get) => ({
       return;
     }
 
-    const myEmail = get().getCurrentUserEmail();
     const readData = {
-      myEmail,
-      otherEmail
+      otherEmail // Server will derive myEmail from auth
     };
 
-    // Send via WebSocket
+    // Send via WebSocket using the correct destination
     state.stompClient.publish({
       destination: '/app/chat.read',
       body: JSON.stringify(readData)
     });
 
-    // Also call REST API
+    // Also call REST API as backup
     try {
       await chatAPI.markMessagesAsRead(readData);
     } catch (error) {
       console.error('Failed to mark messages as read via REST:', error);
     }
 
-    // Update local state
+    // Update local state immediately
+    const myEmail = get().getCurrentUserEmail();
     const conversationKey = get().getConversationKey(myEmail, otherEmail);
     const messages = state.messages[conversationKey] || [];
     const updatedMessages = messages.map(msg => {
       if (msg.senderEmail === otherEmail && msg.status !== 'READ') {
-        return { ...msg, status: 'READ' };
+        return { ...msg, status: 'read' };
       }
       return msg;
     });
@@ -312,19 +449,20 @@ export const useChatStore = create((set, get) => ({
 
   handleReadReceipt: (readData) => {
     const state = get();
-    // Some backends may send {myEmail, otherEmail} or {meEmail, otherEmail}; normalize
     const myEmail = readData.myEmail || readData.meEmail;
     const otherEmail = readData.otherEmail;
+
     if (!myEmail || !otherEmail) {
-      console.warn('[CHAT] Read receipt missing emails', readData);
+      console.warn('[CHAT] Read receipt missing emails:', readData);
       return;
     }
+
     const conversationKey = get().getConversationKey(myEmail, otherEmail);
     const messages = state.messages[conversationKey] || [];
     
     const updatedMessages = messages.map(msg => {
-      if (msg.receiverEmail === myEmail && msg.status !== 'READ') {
-        return { ...msg, status: 'READ' };
+      if (msg.receiverEmail === myEmail && msg.status !== 'read') {
+        return { ...msg, status: 'read' };
       }
       return msg;
     });
@@ -336,7 +474,7 @@ export const useChatStore = create((set, get) => ({
       }
     });
 
-    console.debug('[CHAT] Applied read receipt', { myEmail, otherEmail, updated: updatedMessages.length });
+    console.debug('[CHAT] Applied read receipt:', { myEmail, otherEmail });
   },
 
   // Typing Indicators
@@ -351,6 +489,7 @@ export const useChatStore = create((set, get) => ({
       typing
     };
 
+    // Send via WebSocket using the correct destination
     state.stompClient.publish({
       destination: '/app/chat.typing',
       body: JSON.stringify(typingData)
@@ -358,7 +497,7 @@ export const useChatStore = create((set, get) => ({
   },
 
   handleTypingIndicator: (typingData) => {
-    console.debug('[CHAT] handleTypingIndicator', typingData);
+    console.debug('[CHAT] Processing typing indicator:', typingData);
     const state = get();
     const typingUsers = { ...state.typingUsers };
     
@@ -383,6 +522,61 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  // Call Management
+  handleCallMessage: (callData) => {
+    console.debug('[CHAT] Processing call message:', callData);
+
+    // Import call store dynamically to avoid circular dependency
+    import('./callStore').then(({ useCallStore }) => {
+      const callStore = useCallStore.getState();
+
+      // Handle different types of call messages based on API documentation
+      switch (callData.type) {
+        case 'CALL_OFFER':
+          callStore.handleCallOffer(callData);
+          break;
+
+        case 'CALL_RESPONSE':
+          callStore.handleCallResponse(callData);
+          break;
+
+        case 'ICE_CANDIDATE':
+          callStore.handleIceCandidate(callData);
+          break;
+
+        case 'CALL_STATUS':
+          callStore.handleCallStatus(callData);
+          break;
+
+        case 'CALL_END':
+          callStore.handleCallStatus({ ...callData, state: 'ENDED' });
+          break;
+
+        case 'CALL_ERROR':
+          console.error('[CALL] Error received:', callData.error);
+          callStore.endCall('ERROR');
+          break;
+
+        default:
+          // Auto-detect message type from properties
+          if (callData.sdpOffer) {
+            callStore.handleCallOffer(callData);
+          } else if (callData.sdpAnswer || callData.responseType) {
+            callStore.handleCallResponse(callData);
+          } else if (callData.candidate) {
+            callStore.handleIceCandidate(callData);
+          } else if (callData.state || callData.status) {
+            callStore.handleCallStatus(callData);
+          } else {
+            console.warn('[CHAT] Unknown call message type:', callData);
+          }
+          break;
+      }
+    }).catch(error => {
+      console.error('Failed to handle call message:', error);
+    });
+  },
+
   // Contact Management
   loadContacts: async () => {
     try {
@@ -403,7 +597,7 @@ export const useChatStore = create((set, get) => ({
         contactEmail
       });
       
-      // Reload contacts
+      // Reload contacts after adding
       await get().loadContacts();
     } catch (error) {
       console.error('Failed to add contact:', error);
@@ -414,7 +608,7 @@ export const useChatStore = create((set, get) => ({
   selectContact: (contact) => {
     set({ selectedContact: contact });
     
-    // Always reload history for the selected contact to ensure it's fresh
+    // Load message history for the selected contact
     get().loadMessageHistory(contact.email);
 
     // Mark messages as read
@@ -434,7 +628,7 @@ export const useChatStore = create((set, get) => ({
         otherEmail
       );
       
-      const existingMessages = get().messages[conversationKey] || [];
+      // Reverse to get chronological order (oldest first)
       const newMessages = response.items.slice().reverse();
       
       set({
@@ -472,7 +666,6 @@ export const useChatStore = create((set, get) => ({
   },
 
   setCurrentUserEmail: (email) => {
-    // This can be called from the main chat component to ensure we have the email
     set({ currentUserEmail: email });
   },
 

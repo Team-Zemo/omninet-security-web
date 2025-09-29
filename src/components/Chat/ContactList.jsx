@@ -18,6 +18,7 @@ import {
   PersonAdd as PersonAddIcon
 } from '@mui/icons-material';
 import { useChatStore } from '../../store/chatStore';
+import CallButtons from './CallButtons';
 
 const ContactList = ({ onAddContact }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -299,6 +300,22 @@ const ContactList = ({ onAddContact }) => {
                           {contact.name || contact.email}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                          {/* Call Buttons */}
+                          <Box
+                            onClick={(e) => e.stopPropagation()}
+                            sx={{
+                              opacity: selectedContact?.email === contact.email ? 1 : 0,
+                              transition: 'opacity 0.2s ease-in-out',
+                              '.MuiListItemButton-root:hover &': {
+                                opacity: 1
+                              }
+                            }}
+                          >
+                            <CallButtons
+                              contactEmail={contact.email}
+                              className="flex-shrink-0"
+                            />
+                          </Box>
                           {contact.lastMessageTime && (
                             <Typography
                               variant="caption"
